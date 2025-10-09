@@ -5,7 +5,6 @@ import json
 import time
 import re
 import os
-import yaml
 from datetime import datetime
 from threading import Thread
 
@@ -41,6 +40,7 @@ def handle_submit():
         action_selected = request.form.get("selectedAction")
         upgrade_to_version = request.form.get("upgradeToVersion")
         downgrade_from_version = request.form.get("downgradeFromVersion")
+        download_latest = request.form.get("downloadLatest", "false")
         
         print("=" * 50)
         print("FORM SUBMISSION DATA:")
@@ -51,6 +51,7 @@ def handle_submit():
         print("Action: {}".format(action_selected))
         print("Upgrade To Version: {}".format(upgrade_to_version))
         print("Downgrade From Version: {}".format(downgrade_from_version))
+        print("Download Latest: {}".format(download_latest))
         print("=" * 50)
 
         # Validate required fields
@@ -69,15 +70,15 @@ def handle_submit():
         # For upgrade action, start process and redirect to validation report
         if action_selected and action_selected.lower() == "upgrade":
             print("Upgrade action selected - launching script in background")
-            start_upgrade_process(build_version, dut_ip, vendor, model)
+            start_upgrade_process(build_version, dut_ip, vendor, model, download_latest)
             return redirect(url_for("validation_report"))
         else:
-            return handle_shell_execution(build_version, dut_ip, vendor, model, action_selected)
+            return handle_shell_execution(build_version, dut_ip, vendor, model, action_selected, download_latest)
     
     elif request.method == "GET":
         return handle_sse_stream()
 
-def start_upgrade_process(build_version, dut_ip, vendor, model):
+def start_upgrade_process(build_version, dut_ip, vendor, model, download_latest="false"):
     def run_upgrade():
         global process, current_tasks, current_recap, host_specific_data
         
@@ -95,7 +96,7 @@ def start_upgrade_process(build_version, dut_ip, vendor, model):
                 'recap': {}
             }
             
-            cmd_args = ["./Upgrade_Testing/foldering.sh", build_version, dut_ip, vendor, model]
+            cmd_args = ["./Upgrade_Testing/foldering.sh", build_version, dut_ip, vendor, model, download_latest]
             
             print("Starting process with command: {}".format(' '.join(cmd_args)))
             
@@ -200,11 +201,11 @@ def parse_ansible_output(line):
                 else:
                     host_specific_data[hostname]['status'] = 'completed'
 
-def handle_shell_execution(build_version, dut_ip, vendor, model, action_selected):
+def handle_shell_execution(build_version, dut_ip, vendor, model, action_selected, download_latest="false"):
     print("Running shell script with build version: {}".format(build_version))
     print("DUT IP: {}".format(dut_ip))
     
-    cmd = ["./Upgrade_Testing/foldering.sh", build_version, dut_ip, vendor, model]
+    cmd = ["./Upgrade_Testing/foldering.sh", build_version, dut_ip, vendor, model, download_latest]
             
     print("Running command: {}".format(' '.join(cmd)))
     
