@@ -1,0 +1,111 @@
+## This role checks for, should be present vni interfaces of host devices
+## Any missing vni interfaces results in failure of the verification
+
+---
+- name: Importing vos_vsh_stop role to stop versa services 
+  include_role:
+    name: vos_vsh_stop
+
+## Remove cdb files with sudo privileges
+- name: Removing A.cdb file
+  file:
+    path: "{{ a_cdb }}"
+    state: absent
+
+- name: Removing C.cdb file
+  file:
+    path: "{{ c_cdb }}"
+    state: absent
+
+- name: Removing O.cdb file
+  file:
+    path: "{{ o_cdb }}"
+    state: absent
+
+- name: Importing vos_vsh_start role to restart vos services
+  include_role:
+    name: vos_vsh_start
+
+- name: Verify show interfaces brief output matches cli_interfaces_check
+  shell: " echo 'show interface brief | tab' | /opt/versa/confd/bin/confd_cli -u admin -g admin -N"
+  register: interfaces_output
+  failed_when: interfaces_output.rc != 0
+  ignore_errors: yes
+
+- name: Read expected cli_interfaces_check file
+  local_action:
+    module: slurp
+    src: "{{ post_install_path }}/cli_interfaces_check"
+  register: expected_interfaces
+  when: interfaces_output.rc == 0
+
+- name: Normalize and extract interfaces names from actual and expected output
+  set_fact:
+    actual_interfaces_raw: "{{
+      interfaces_output.stdout_lines
+      | map('regex_search', '^([^\\s]+)')
+      | list
+    }}"
+
+    expected_interfaces_decoded: "{{
+      expected_interfaces.content
+      | b64decode
+      | trim
+    }}"
+
+- name: Normalize and extract interfaces names from raw  expected output
+  set_fact:
+    expected_interfaces_raw: "{{
+      expected_interfaces_decoded
+      | regex_findall('.*')
+      | map('regex_search', '^([^\\s]+)')
+      | list
+    }}"
+
+- name: Remove first two  items from Interface names List to retain only vni-interfaces
+  set_fact:
+    actual_interfaces_names: "{{ actual_interfaces_raw[2:] }}"
+    expected_interfaces_names: "{{ expected_interfaces_raw[2:] }}"
+
+- name: Find differences in interfaces
+  set_fact:
+    interfaces_differences: "{{ actual_interfaces_names | difference(expected_interfaces_names) }}"
+
+- name: Debug interfaces brief comparision
+  debug:
+    msg:
+      - "Actual interfaces names: {{ actual_interfaces_names }}"
+      - "Expected interfaces names: {{ expected_interfaces_names }}"
+
+- name: Handle and log interface mismatch failures
+  block:
+    - name: Fail if show interfaces brief outputs does not match expected
+      debug:
+        msg: "Interface brief output does not match expected; see Differences in interfaces: {{ interfaces_differences }}"
+      failed_when: interfaces_differences | length > 0
+      ignore_errors: yes
+
+    - name: Log VNI-interfaces failure to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAIL]: With build {{ system_build[0] }} VNI-interfaces error on host {{ inventory_hostname }}: {{ interfaces_differences | join(', ') }}"
+        create: yes
+        state: present
+      ignore_errors: yes
+  when: interfaces_differences | length > 0
+
+- name: Handle successful interface check
+  block:
+    - name: Success - interfaces output matches expected
+      debug:
+        msg: "Success: interfaces output matches expected. No differences in interfaces_check."
+
+    - name: Log interface check success to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [INFO]: With build {{ system_build[0] }} VNI-interfaces OK on host {{ inventory_hostname }}."
+        create: yes
+        state: present
+  when: interfaces_differences | length == 0

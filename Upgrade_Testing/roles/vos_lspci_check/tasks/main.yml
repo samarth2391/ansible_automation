@@ -1,0 +1,82 @@
+## This role checks for should be present lspci addresses of host devices
+## Any missing pci addresses results in failure of the verification
+
+---
+- name: Verify lspci output matches vos_lspci_check from control node
+  shell: "lspci | grep Ethernet"
+  register: lspci_output
+  failed_when: lspci_output.rc != 0
+  ignore_errors: yes
+
+- name: Read expected vos_lspci_check file
+  local_action:
+    module: slurp
+    src: "{{ post_install_path }}/lspci_interfaces_check"
+  register: expected_lspci
+
+- name: Normalize and filter actual and expected lspci outputs
+  set_fact:
+    actual_lspci_normalized: "{{
+      lspci_output.stdout_lines
+      | map('regex_replace', '^([0-9a-fA-F]+)(\\.\\d+)?\\s+ethernet controller:\\s*(.*)$', '\\1 \\3')
+      | map('lower')
+      | select('!=', '')
+      | sort
+    }}"
+    expected_lspci_normalized: "{{
+      expected_lspci.content
+      | b64decode
+      | regex_findall('.*')
+      | map('regex_replace', '^([0-9a-fA-F]+)(\\.\\d+)?\\s+ethernet controller:\\s*(.*)$', '\\1 \\3')
+      | map('lower')
+      | select('!=', '')
+      | sort
+    }}"
+
+- name: Convert filtered lists to sets for comparison
+  set_fact:
+    actual_lspci_set: "{{ actual_lspci_normalized | unique | list }}"
+    expected_lspci_set: "{{ expected_lspci_normalized | unique | list }}"
+
+- name: Find differences in addresses
+  set_fact:
+    lspci_differences: "{{ actual_lspci_set | difference(expected_lspci_set) }}"
+
+- name: Debug filtered lspci comparison results
+  debug:
+    msg:
+      - "Filtered normalized actual lspci output: {{ actual_lspci_set }}"
+      - "Filtered normalized expected lspci output: {{ expected_lspci_set }}"
+
+- name: Handle and log lspci mismatch failures
+  block:
+    - name: Fail if lspci output does not match expected
+      debug:
+        msg: "lspci output does not match expected; see Differences in addresses: {{ lspci_differences }}"
+      failed_when: lspci_differences | length > 0
+      ignore_errors: yes
+
+    - name: Log lspci failure to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAIL]: With build {{ system_build[0] }} lspci error on host {{ inventory_hostname }}: {{ lspci_differences | join(', ') }}."
+        create: yes
+        state: present
+      ignore_errors: yes
+  when: lspci_differences | length > 0
+
+- name: Handle successful lspci check
+  block:
+    - name: Success - lspci output matches expected
+      debug:
+        msg: "Success: lspci output matches expected. No differences in addresses."
+
+    - name: Log lspci check success to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [INFO]: With build {{ system_build[0] }} lspci addresses OK on host {{ inventory_hostname }}."
+        create: yes
+        state: present
+  when: lspci_differences | length == 0

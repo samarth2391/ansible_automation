@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Versa Hardware Testing Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .checkbox-custom {
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            width: 20px;
+            height: 20px;
+        }
+        
+        .checkbox-custom:checked {
+            background: linear-gradient(135deg, #7CB342 0%, #1976D2 100%);
+            border-color: #1976D2;
+        }
+        
+        .checkbox-custom:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .checkbox-custom:hover:not(:disabled) {
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        .checkbox-custom:disabled {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+            cursor: not-allowed;
+            opacity: 0.3;
+        }
+
+        .model-item-disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .model-item-disabled label {
+            cursor: not-allowed;
+            color: rgba(156, 163, 175, 0.5);
+        }
+
+        .animate-in {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+    <div class="max-w-5xl mx-auto py-8 px-6">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <div class="flex items-center justify-center gap-6 mb-6 flex-wrap">
+                <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                    <div class="text-xl font-bold">V</div>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold drop-shadow-lg">Versa Hardware Testing Portal</h1>
+            </div>
+            <p class="text-lg text-gray-300">Configure and manage hardware testing operations</p>
+        </div>
+
+        <!-- Main Form -->
+        <div class="bg-white bg-opacity-5 backdrop-blur-lg rounded-3xl p-8 border border-white border-opacity-10 shadow-2xl" id="mainForm">
+            
+            <!-- Hardware Models Selection -->
+            <div class="mb-8">
+                <label class="block text-xl font-semibold mb-4 text-gray-100">Select Hardware Models</label>
+                <div class="grid grid-cols-1 gap-3 p-4 bg-white bg-opacity-5 rounded-xl border border-white border-opacity-10" id="hardwareModelsContainer">
+                </div>
+                <div class="mt-4 p-4 bg-green-500 bg-opacity-10 border-l-4 border-green-500 rounded-lg" id="selectedModelsSummary" style="display: none;">
+                    <div class="text-green-400 font-medium" id="summaryText"></div>
+                </div>
+            </div>
+
+            <!-- Action Selection -->
+            <div class="mb-8">
+                <label class="block text-xl font-semibold mb-4 text-gray-100">Select Action to be Performed</label>
+                <select class="w-full p-4 text-white bg-white bg-opacity-10 border-2 border-white border-opacity-20 rounded-xl backdrop-blur-sm transition-all duration-300 hover:border-opacity-40 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 disabled:opacity-50 disabled:cursor-not-allowed" disabled="" id="actionSelect">
+                    <option value="" class="text-gray-800 bg-white">Choose an action...</option>
+                    <option value="upgrade" class="text-gray-800 bg-white">Upgrade</option>
+                    <option value="downgrade" class="text-gray-800 bg-white">Downgrade</option>
+                    <option value="load-new-image" class="text-gray-800 bg-white">Load New Image</option>
+                    <option value="install-iso" class="text-gray-800 bg-white">Install ISO</option>
+                    <option value="load-basic-config" class="text-gray-800 bg-white">Load Basic Configuration</option>
+                </select>
+            </div>
+
+            <!-- Version Fields -->
+            <div class="bg-white bg-opacity-5 border-t border-white border-opacity-10 pt-6 animate-in mb-8 space-y-6" id="versionFields" style="display: none;">
+                <div id="fromVersionSection">
+                    <label class="block text-lg font-semibold mb-3 text-gray-200">
+                        <span id="fromVersionLabel">Upgrade</span> from version:
+                    </label>
+                    <div class="flex flex-wrap gap-4" id="fromVersionCheckboxes">
+                        <div class="flex items-center space-x-2">
+                            <input class="checkbox-custom" id="from2211" type="checkbox" value="22.1.1"/>
+                            <label class="text-gray-200 cursor-pointer hover:text-white transition-colors" for="from2211">22.1.1</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input class="checkbox-custom" id="from2212" type="checkbox" value="22.1.2"/>
+                            <label class="text-gray-200 cursor-pointer hover:text-white transition-colors" for="from2212">22.1.2</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input class="checkbox-custom" id="from2213" type="checkbox" value="22.1.3"/>
+                            <label class="text-gray-200 cursor-pointer hover:text-white transition-colors" for="from2213">22.1.3</label>
+                        </div>
+                    </div>
+                    <input class="w-full p-4 mt-3 text-white bg-white bg-opacity-10 border-2 border-white border-opacity-20 rounded-xl backdrop-blur-sm transition-all duration-300 hover:border-opacity-40 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 placeholder-gray-400" id="downgradeFromInput" placeholder="Enter version (e.g., 22.1.4)" style="display: none;" type="text"/>
+                    <div class="mt-3 p-3 text-red-400 text-sm bg-red-400 bg-opacity-10 border-l-4 border-red-400 rounded" id="fromVersionError" style="display: none;"></div>
+                </div>
+                
+                <div id="toVersionSection">
+                    <label class="block text-lg font-semibold mb-3 text-gray-200">
+                        <span id="toVersionLabel">Upgrade</span> to version:
+                    </label>
+                    <div class="flex flex-wrap gap-4" id="toVersionCheckboxes" style="display: none;">
+                        <div class="flex items-center space-x-2">
+                            <input class="checkbox-custom" id="to2211" type="checkbox" value="22.1.1"/>
+                            <label class="text-gray-200 cursor-pointer hover:text-white transition-colors" for="to2211">22.1.1</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input class="checkbox-custom" id="to2212" type="checkbox" value="22.1.2"/>
+                            <label class="text-gray-200 cursor-pointer hover:text-white transition-colors" for="to2212">22.1.2</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input class="checkbox-custom" id="to2213" type="checkbox" value="22.1.3"/>
+                            <label class="text-gray-200 cursor-pointer hover:text-white transition-colors" for="to2213">22.1.3</label>
+                        </div>
+                    </div>
+                    <input class="w-full p-4 text-white bg-white bg-opacity-10 border-2 border-white border-opacity-20 rounded-xl backdrop-blur-sm transition-all duration-300 hover:border-opacity-40 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 placeholder-gray-400" id="upgradeToInput" placeholder="Enter version (e.g., 22.1.4)" type="text"/>
+                    <div class="mt-3 p-3 text-red-400 text-sm bg-red-400 bg-opacity-10 border-l-4 border-red-400 rounded" id="toVersionError" style="display: none;"></div>
+                </div>
+
+                <!-- Image Upload Section for Load New Image -->
+                <div id="imageUploadSection" style="display: none;">
+                    <label class="block text-lg font-semibold mb-3 text-gray-200">Image Source:</label>
+                    
+                    <!-- Upload Method Selection -->
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <div class="flex items-center space-x-2">
+                            <input class="checkbox-custom" id="uploadFile" type="radio" name="imageSource" value="upload"/>
+                            <label class="text-gray-200 cursor-pointer hover:text-white transition-colors" for="uploadFile">Upload File</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input class="checkbox-custom" id="downloadUrl" type="radio" name="imageSource" value="url"/>
+                            <label class="text-gray-200 cursor-pointer hover:text-white transition-colors" for="downloadUrl">Download from URL</label>
+                        </div>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div id="fileUploadContainer" style="display: none;" class="mb-4">
+                        <div class="border-2 border-dashed border-white border-opacity-30 rounded-xl p-6 text-center hover:border-opacity-50 transition-all duration-300">
+                            <input type="file" id="imageFileInput" accept=".img,.iso,.bin,.tar,.gz,.zip" class="hidden" />
+                            <div class="space-y-3">
+                                <div class="text-4xl text-blue-400">📁</div>
+                                <div>
+                                    <button type="button" onclick="document.getElementById('imageFileInput').click()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                        Choose File
+                                    </button>
+                                </div>
+                                <div class="text-sm text-gray-400">
+                                    Supported formats: .img, .iso, .bin, .tar, .gz, .zip
+                                </div>
+                                <div id="selectedFileName" class="text-green-400 font-medium" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL Input -->
+                    <div id="urlInputContainer" style="display: none;" class="mb-4">
+                        <input class="w-full p-4 text-white bg-white bg-opacity-10 border-2 border-white border-opacity-20 rounded-xl backdrop-blur-sm transition-all duration-300 hover:border-opacity-40 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 placeholder-gray-400" 
+                               id="imageUrlInput" 
+                               placeholder="Enter image URL (e.g., https://example.com/firmware.img)" 
+                               type="url"/>
+                        <div class="mt-2 text-sm text-gray-400">
+                            Enter a direct URL to download the image file
+                        </div>
+                    </div>
+
+                    <div class="mt-3 p-3 text-red-400 text-sm bg-red-400 bg-opacity-10 border-l-4 border-red-400 rounded" id="imageSourceError" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button class="w-full py-4 text-xl font-bold bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none uppercase tracking-wide" disabled="" id="submitBtn">
+                Start Testing Process
+            </button>
+        </div>
+
+        <!-- Testing Interface -->
+        <div class="max-w-6xl mx-auto" id="testingInterface" style="display: none;">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold mb-3 drop-shadow-lg">Hardware Testing in Progress</h1>
+                <p class="text-xl text-green-400">Ansible Playbook Execution</p>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-6 mb-8">
+                <!-- Configuration Panel -->
+                <div class="bg-white bg-opacity-5 backdrop-blur-lg rounded-2xl p-6 border border-white border-opacity-10">
+                    <div class="bg-blue-600 bg-opacity-15 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
+                        <h3 class="text-lg font-semibold text-blue-400 mb-3">Testing Configuration</h3>
+                        <div class="space-y-2 text-gray-200 text-sm" id="testingConfig"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white bg-opacity-5 p-4 rounded-xl text-center border border-white border-opacity-10">
+                            <div class="text-gray-400 text-xs mb-1">Execution Status</div>
+                            <div class="font-semibold text-orange-400" id="executionStatus">Running</div>
+                        </div>
+                        <div class="bg-white bg-opacity-5 p-4 rounded-xl text-center border border-white border-opacity-10">
+                            <div class="text-gray-400 text-xs mb-1">Progress</div>
+                            <div class="font-semibold text-orange-400" id="progressStatus">In Progress</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Output Panel -->
+                <div class="bg-white bg-opacity-5 backdrop-blur-lg rounded-2xl p-6 border border-white border-opacity-10">
+                    <h3 class="text-lg font-semibold text-blue-400 mb-4">Ansible Playbook Output</h3>
+                    <div class="bg-black rounded-lg p-4 min-h-80 max-h-80 overflow-y-auto font-mono text-xs leading-relaxed border border-gray-700" id="ansibleOutput">
+                        <div class="text-gray-300">Initializing Ansible playbook execution...</div>
+                        <div class="text-gray-300">Connecting to hardware...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Control Buttons -->
+            <div class="flex justify-center space-x-4">
+                <button class="px-6 py-3 bg-white bg-opacity-10 text-white border border-white border-opacity-20 rounded-lg hover:bg-opacity-20 transition-all duration-300" id="backBtn">
+                    Back to Portal
+                </button>
+                <button class="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg hover:scale-105 transition-all duration-300 font-semibold" id="refreshBtn">
+                    Refresh Status
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        var selectedModels = [];
+        var selectedSubModels = {};
+        var selectedAction = '';
+        var fromVersions = [];
+        var toVersions = [];
+        var upgradeToVersion = '';
+        var downgradeFromVersion = '';
+        var imageSource = '';
+        var selectedImageFile = null;
+        var imageUrl = '';
+
+        // Hardware models data
+        var hardwareModels = [
+            { value: 'CSG300', label: 'Versa CSG300 Series - Small Enterprise Branch & Home Office', available: false },
+            { value: 'CSG700', label: 'Versa CSG700 Series - Mid to Large Enterprise Branches', available: true },
+            { value: 'CSG1000', label: 'Versa CSG1000 Series - High Performance Branch, Campus & Data Center', available: false },
+            { value: 'CSG2500', label: 'Versa CSG2500 Series - Large Regional Offices & Campus Sites', available: true },
+            { value: 'CSG3000', label: 'Versa CSG3000 Series - High Performance WAN Edge Deployments', available: true },
+            { value: 'CSX4000', label: 'Versa CSX4000 Series - SD-LAN Edge & Access Layer', available: false },
+            { value: 'CSG5000', label: 'Versa CSG5000 Series - High Performance Campus & Data Center', available: true },
+            { value: 'CSG-5G', label: 'Embedded 5G Appliances - CSG700/1000 with 5G Modules', available: true },
+            { value: 'Silicom', label: 'Silicom boxes', available: true },
+            { value: 'Dell', label: 'Dell boxes', available: true }
+        ];
+
+        var subModelOptions = {
+            CSG300: [
+                { value: 'CSG300', label: 'CSG300' },
+                { value: 'CSG350', label: 'CSG350' }
+            ],
+            CSG700: [
+                { value: 'CSG750', label: 'CSG750' }
+            ],
+            CSG1000: [
+                { value: 'CSG1300', label: 'CSG1300' },
+                { value: 'CSG1500', label: 'CSG1500' }
+            ],
+            CSG2500: [
+                { value: 'CSG2500', label: 'CSG2500' }
+            ],
+            CSG3000: [
+                { value: 'CSG3300', label: 'CSG3300' },
+                { value: 'CSG3500', label: 'CSG3500' }
+            ],
+            Dell: [
+                { value: 'VEP-4600-V930', label: 'VEP-4600-V930' },
+                { value: 'VEP-1300', label: 'VEP-1300' }
+            ],
+            Silicom: [
+                { value: 'Cardoba', label: 'Cardoba' }
+            ]
+        };
+
+        // Utility functions
+        function validateVersionFormat(version) {
+            var versionPattern = /^2\d\.\d+\.\d+$/;
+            return versionPattern.test(version);
+        }
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            var k = 1024;
+            var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            var i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function isModelSelectionComplete() {
+            if (selectedModels.length === 0) return false;
+            
+            var modelsRequiringSubSelection = selectedModels.filter(function(model) {
+                return ['CSG700', 'CSG2500', 'CSG3000', 'Dell', 'Silicom'].indexOf(model) !== -1;
+            });
+            
+            for (var i = 0; i < modelsRequiringSubSelection.length; i++) {
+                var model = modelsRequiringSubSelection[i];
+                var modelSubModels = subModelOptions[model] || [];
+                var hasSelectedSubModel = modelSubModels.some(function(subModel) {
+                    return selectedSubModels[model + '-' + subModel.value];
+                });
+                if (!hasSelectedSubModel) return false;
+            }
+            
+            return true;
+        }
+
+        function areVersionsSelected() {
+            if (selectedAction === 'upgrade') {
+                return fromVersions.length > 0 && upgradeToVersion.trim() !== '' && validateVersionFormat(upgradeToVersion);
+            } else if (selectedAction === 'downgrade') {
+                return downgradeFromVersion.trim() !== '' && validateVersionFormat(downgradeFromVersion) && toVersions.length > 0;
+            } else if (selectedAction === 'load-new-image') {
+                return imageSource !== '' && 
+                       ((imageSource === 'upload' && selectedImageFile !== null) || 
+                        (imageSource === 'url' && imageUrl.trim() !== '' && isValidUrl(imageUrl)));
+            }
+            
+            return true;
+        }
+
+        function updateFormStates() {
+            var actionSelect = document.getElementById('actionSelect');
+            var submitBtn = document.getElementById('submitBtn');
+            var modelComplete = isModelSelectionComplete();
+            var actionSelected = selectedAction !== '';
+            var versionsComplete = areVersionsSelected();
+            
+            actionSelect.disabled = !modelComplete;
+            submitBtn.disabled = !(modelComplete && actionSelected && versionsComplete);
+        }
+
+        function showError(elementId, message) {
+            var errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function hideError(elementId) {
+            var errorElement = document.getElementById(elementId);
+            errorElement.style.display = 'none';
+        }
+
+        function hideVersionFields() {
+            document.getElementById('versionFields').style.display = 'none';
+            hideError('fromVersionError');
+            hideError('toVersionError');
+            hideError('imageSourceError');
+        }
+
+        // Initialize hardware models
+        function initializeHardwareModels() {
+            var container = document.getElementById('hardwareModelsContainer');
+            container.innerHTML = '';
+            
+            hardwareModels.forEach(function(model) {
+                var div = document.createElement('div');
+                div.className = 'mb-3';
+                
+                var modelHtml = '';
+                if (model.available) {
+                    modelHtml = '<div class="flex items-start space-x-3 p-3 rounded-lg hover:bg-white hover:bg-opacity-5 transition-all duration-200">' +
+                               '<input type="checkbox" id="model-' + model.value + '" class="checkbox-custom mt-1 flex-shrink-0" onchange="handleModelChange(\'' + model.value + '\', this.checked)">' +
+                               '<label for="model-' + model.value + '" class="text-gray-200 cursor-pointer hover:text-white transition-colors leading-tight flex-1">' + model.label + '</label>' +
+                               '</div>';
+                } else {
+                    modelHtml = '<div class="flex items-start space-x-3 p-3 rounded-lg model-item-disabled">' +
+                               '<input type="checkbox" id="model-' + model.value + '" class="checkbox-custom mt-1 flex-shrink-0" disabled>' +
+                               '<label for="model-' + model.value + '" class="leading-tight flex-1">' + model.label + ' <span class="text-red-400 text-sm">(Unavailable)</span></label>' +
+                               '</div>';
+                }
+                
+                // Add sub-models container that will be shown/hidden
+                var subModelsHtml = '';
+                if (subModelOptions[model.value]) {
+                    var checkboxesHtml = '';
+                    subModelOptions[model.value].forEach(function(subModel) {
+                        var key = model.value + '-' + subModel.value;
+                        checkboxesHtml += '<div class="flex items-center space-x-2 mr-6 mb-2">' +
+                                         '<input type="checkbox" id="' + key + '" class="checkbox-custom" ' +
+                                         'onchange="handleSubModelChange(\'' + model.value + '\', \'' + subModel.value + '\', this.checked)">' +
+                                         '<label for="' + key + '" class="text-gray-200 cursor-pointer hover:text-white transition-colors text-sm">' + subModel.label + '</label>' +
+                                         '</div>';
+                    });
+                    
+                    subModelsHtml = '<div id="submodels-' + model.value + '" class="ml-8 mt-3 p-3 bg-white bg-opacity-5 rounded-lg border border-white border-opacity-10" style="display: none;">' +
+                                   '<div class="text-blue-400 text-sm font-medium mb-2">Select ' + model.value + ' Sub-Models:</div>' +
+                                   '<div class="flex flex-wrap">' + checkboxesHtml + '</div>' +
+                                   '</div>';
+                }
+                
+                div.innerHTML = modelHtml + subModelsHtml;
+                container.appendChild(div);
+            });
+        }
+
+        // Handle model selection
+        function handleModelChange(model, checked) {
+            if (checked) {
+                selectedModels.push(model);
+                // Show sub-models if they exist
+                var subModelsDiv = document.getElementById('submodels-' + model);
+                if (subModelsDiv) {
+                    subModelsDiv.style.display = 'block';
+                }
+            } else {
+                selectedModels = selectedModels.filter(function(m) { return m !== model; });
+                
+                // Hide sub-models and clear selections
+                var subModelsDiv = document.getElementById('submodels-' + model);
+                if (subModelsDiv) {
+                    subModelsDiv.style.display = 'none';
+                    // Clear related sub-model selections
+                    var subModelCheckboxes = subModelsDiv.querySelectorAll('input[type="checkbox"]');
+                    for (var i = 0; i < subModelCheckboxes.length; i++) {
+                        subModelCheckboxes[i].checked = false;
+                    }
+                }
+                
+                // Clear related sub-models from state
+                var keysToRemove = Object.keys(selectedSubModels).filter(function(key) {
+                    return key.indexOf(model + '-') === 0;
+                });
+                keysToRemove.forEach(function(key) {
+                    delete selectedSubModels[key];
+                });
+            }
+            
+            // Reset dependent fields when models change
+            selectedAction = '';
+            fromVersions = [];
+            toVersions = [];
+            upgradeToVersion = '';
+            downgradeFromVersion = '';
+            imageSource = '';
+            selectedImageFile = null;
+            imageUrl = '';
+            document.getElementById('actionSelect').value = '';
+            hideVersionFields();
+            
+            updateModelsSummary();
+            updateFormStates();
+        }
+
+        function updateModelsSummary() {
+            var summaryDiv = document.getElementById('selectedModelsSummary');
+            var summaryText = document.getElementById('summaryText');
+            
+            if (selectedModels.length > 0) {
+                summaryDiv.style.display = 'block';
+                summaryText.textContent = 'Selected: ' + selectedModels.length + ' model' + (selectedModels.length !== 1 ? 's' : '') + ' → ' + selectedModels.join(', ');
+            } else {
+                summaryDiv.style.display = 'none';
+            }
+        }
+
+        function handleSubModelChange(model, subModel, checked) {
+            var key = model + '-' + subModel;
+            if (checked) {
+                selectedSubModels[key] = true;
+            } else {
+                delete selectedSubModels[key];
+            }
+            updateFormStates();
+        }
+
+        // Handle action selection
+        function handleActionChange() {
+            var actionSelect = document.getElementById('actionSelect');
+            selectedAction = actionSelect.value;
+            
+            var versionFields = document.getElementById('versionFields');
+            var fromVersionLabel = document.getElementById('fromVersionLabel');
+            var toVersionLabel = document.getElementById('toVersionLabel');
+            var fromVersionCheckboxes = document.getElementById('fromVersionCheckboxes');
+            var toVersionCheckboxes = document.getElementById('toVersionCheckboxes');
+            var upgradeToInput = document.getElementById('upgradeToInput');
+            var downgradeFromInput = document.getElementById('downgradeFromInput');
+            var imageUploadSection = document.getElementById('imageUploadSection');
+            var fromVersionSection = document.getElementById('fromVersionSection');
+            var toVersionSection = document.getElementById('toVersionSection');
+            
+            // Clear all version selections and image data
+            fromVersions = [];
+            toVersions = [];
+            upgradeToVersion = '';
+            downgradeFromVersion = '';
+            imageSource = '';
+            selectedImageFile = null;
+            imageUrl = '';
+            
+            // Reset form elements
+            var fromCheckboxes = document.querySelectorAll('#fromVersionCheckboxes input[type="checkbox"]');
+            for (var i = 0; i < fromCheckboxes.length; i++) {
+                fromCheckboxes[i].checked = false;
+            }
+            var toCheckboxes = document.querySelectorAll('#toVersionCheckboxes input[type="checkbox"]');
+            for (var i = 0; i < toCheckboxes.length; i++) {
+                toCheckboxes[i].checked = false;
+            }
+            var imageRadios = document.querySelectorAll('input[name="imageSource"]');
+            for (var i = 0; i < imageRadios.length; i++) {
+                imageRadios[i].checked = false;
+            }
+            upgradeToInput.value = '';
+            downgradeFromInput.value = '';
+            document.getElementById('imageFileInput').value = '';
+            document.getElementById('imageUrlInput').value = '';
+            document.getElementById('selectedFileName').style.display = 'none';
+            document.getElementById('fileUploadContainer').style.display = 'none';
+            document.getElementById('urlInputContainer').style.display = 'none';
+            
+            hideError('fromVersionError');
+            hideError('toVersionError');
+            hideError('imageSourceError');
+            
+            if (selectedAction === 'upgrade') {
+                versionFields.style.display = 'block';
+                fromVersionSection.style.display = 'block';
+                toVersionSection.style.display = 'block';
+                fromVersionLabel.textContent = 'Upgrade';
+                toVersionLabel.textContent = 'Upgrade';
+                
+                fromVersionCheckboxes.style.display = 'flex';
+                downgradeFromInput.style.display = 'none';
+                toVersionCheckboxes.style.display = 'none';
+                upgradeToInput.style.display = 'block';
+                imageUploadSection.style.display = 'none';
+                
+            } else if (selectedAction === 'downgrade') {
+                versionFields.style.display = 'block';
+                fromVersionSection.style.display = 'block';
+                toVersionSection.style.display = 'block';
+                fromVersionLabel.textContent = 'Downgrade';
+                toVersionLabel.textContent = 'Downgrade';
+                
+                fromVersionCheckboxes.style.display = 'none';
+                downgradeFromInput.style.display = 'block';
+                toVersionCheckboxes.style.display = 'flex';
+                upgradeToInput.style.display = 'none';
+                imageUploadSection.style.display = 'none';
+                
+            } else if (selectedAction === 'load-new-image') {
+                versionFields.style.display = 'block';
+                fromVersionSection.style.display = 'none';
+                toVersionSection.style.display = 'none';
+                imageUploadSection.style.display = 'block';
+                
+            } else {
+                versionFields.style.display = 'none';
+            }
+            
+            updateFormStates();
+        }
+
+        function handleVersionCheckboxChange(version, type) {
+            if (type === 'from') {
+                var checkbox = document.getElementById('from' + version.replace(/\./g, ''));
+                if (checkbox.checked) {
+                    fromVersions.push(version);
+                } else {
+                    fromVersions = fromVersions.filter(function(v) { return v !== version; });
+                }
+            } else {
+                var checkbox = document.getElementById('to' + version.replace(/\./g, ''));
+                if (checkbox.checked) {
+                    toVersions.push(version);
+                } else {
+                    toVersions = toVersions.filter(function(v) { return v !== version; });
+                }
+            }
+            updateFormStates();
+        }
+
+        function handleVersionInputChange(value, type) {
+            if (type === 'upgrade-to') {
+                upgradeToVersion = value;
+                if (value && !validateVersionFormat(value)) {
+                    showError('toVersionError', 'Please enter version in format 22.x.x (e.g., 22.1.4)');
+                } else {
+                    hideError('toVersionError');
+                }
+            } else if (type === 'downgrade-from') {
+                downgradeFromVersion = value;
+                if (value && !validateVersionFormat(value)) {
+                    showError('fromVersionError', 'Please enter version in format 22.x.x (e.g., 22.1.4)');
+                } else {
+                    hideError('fromVersionError');
+                }
+            }
+            updateFormStates();
+        }
+
+        // Handle image source selection
+        function handleImageSourceChange(source) {
+            imageSource = source;
+            var fileUploadContainer = document.getElementById('fileUploadContainer');
+            var urlInputContainer = document.getElementById('urlInputContainer');
+            
+            // Reset previous selections
+            selectedImageFile = null;
+            imageUrl = '';
+            document.getElementById('imageFileInput').value = '';
+            document.getElementById('imageUrlInput').value = '';
+            document.getElementById('selectedFileName').style.display = 'none';
+            hideError('imageSourceError');
+            
+            if (source === 'upload') {
+                fileUploadContainer.style.display = 'block';
+                urlInputContainer.style.display = 'none';
+            } else if (source === 'url') {
+                fileUploadContainer.style.display = 'none';
+                urlInputContainer.style.display = 'block';
+            }
+            
+            updateFormStates();
+        }
+
+        // Handle file selection
+        function handleFileSelection(event) {
+            var file = event.target.files[0];
+            if (file) {
+                selectedImageFile = file;
+                var fileNameDisplay = document.getElementById('selectedFileName');
+                fileNameDisplay.textContent = 'Selected: ' + file.name + ' (' + formatFileSize(file.size) + ')';
+                fileNameDisplay.style.display = 'block';
+                hideError('imageSourceError');
+            } else {
+                selectedImageFile = null;
+                document.getElementById('selectedFileName').style.display = 'none';
+            }
+            updateFormStates();
+        }
+
+        // Handle URL input
+        function handleImageUrlChange(value) {
+            imageUrl = value;
+            if (value && !isValidUrl(value)) {
+                showError('imageSourceError', 'Please enter a valid URL');
+            } else {
+                hideError('imageSourceError');
+            }
+            updateFormStates();
+        }
+
+        function simulateAnsibleOutput() {
+            var outputs = [
+                "PLAY [Versa Hardware Testing] ************************************************",
+                "TASK [Gathering Facts] *******************************************************",
+                "ok: [localhost]",
+                "TASK [Checking hardware connectivity] ***************************************",
+                "ok: [localhost] => Hardware connection established",
+                "TASK [Validating firmware version] ******************************************",
+                "ok: [localhost] => Current version validated",
+                "TASK [Creating system backup] ********************************************",
+                "changed: [localhost] => Backup created successfully",
+                "TASK [Downloading firmware image] *******************************************",
+                "changed: [localhost] => Image downloaded and verified (256MB)",
+                "TASK [Stopping services] ************************************************",
+                "changed: [localhost] => All services stopped gracefully",
+                "TASK [Installing new firmware] **********************************************",
+                "changed: [localhost] => Installation in progress... (45% complete)",
+                "changed: [localhost] => Installation in progress... (78% complete)",
+                "changed: [localhost] => Installation in progress... (95% complete)",
+                "TASK [Restarting system] *************************************************",
+                "changed: [localhost] => System restart initiated",
+                "TASK [Verifying installation] ***********************************************",
+                "ok: [localhost] => Installation completed successfully",
+                "ok: [localhost] => All services running normally",
+                "PLAY RECAP *******************************************************************",
+                "localhost                  : ok=8    changed=6    unreachable=0    failed=0",
+                "",
+                "=== Hardware testing completed successfully ==="
+            ];
+
+            var outputContainer = document.getElementById('ansibleOutput');
+            outputContainer.innerHTML = '';
+            var index = 0;
+            
+            var interval = setInterval(function() {
+                if (index < outputs.length) {
+                    var div = document.createElement('div');
+                    div.className = 'mb-1';
+                    div.textContent = outputs[index];
+                    
+                    // Color coding for different types of output
+                    if (outputs[index].indexOf('ERROR') !== -1 || outputs[index].indexOf('FAILED') !== -1 || outputs[index].indexOf('failed=') !== -1) {
+                        div.className += ' text-red-400';
+                    } else if (outputs[index].indexOf('ok:') !== -1 || outputs[index].indexOf('changed:') !== -1) {
+                        div.className += ' text-green-400';
+                    } else if (outputs[index].indexOf('TASK') !== -1) {
+                        div.className += ' text-blue-400 font-medium';
+                    } else if (outputs[index].indexOf('PLAY') !== -1) {
+                        div.className += ' text-orange-400 font-medium';
+                    } else if (outputs[index].indexOf('RECAP') !== -1) {
+                        div.className += ' text-purple-400 font-medium';
+                    } else if (outputs[index].indexOf('===') !== -1) {
+                        div.className += ' text-green-400 font-bold';
+                    } else {
+                        div.className += ' text-gray-300';
+                    }
+                    
+                    outputContainer.appendChild(div);
+                    outputContainer.scrollTop = outputContainer.scrollHeight;
+                    index++;
+                } else {
+                    clearInterval(interval);
+                    
+                    // Update status to completed
+                    document.getElementById('executionStatus').textContent = 'Completed';
+                    document.getElementById('executionStatus').className = 'font-semibold text-green-400';
+                    document.getElementById('progressStatus').textContent = 'Success';
+                    document.getElementById('progressStatus').className = 'font-semibold text-green-400';
+                }
+            }, 1200);
+        }
+
+        // Handle form submission
+        function handleSubmit() {
+            if (!isModelSelectionComplete() || !selectedAction || !areVersionsSelected()) {
+                return;
+            }
+
+            // Create a hidden form with all the correct field names that Flask expects
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/submit';
+            form.enctype = 'multipart/form-data'; // Important for file uploads
+            form.style.display = 'none';
+
+            // Add hardware models (Flask expects 'hardwareModel' field name)
+            selectedModels.forEach(function(model) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'hardwareModel';
+                input.value = model;
+                form.appendChild(input);
+            });
+
+            // Add selected action (Flask expects 'selectedAction' field name)
+            var actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'selectedAction';
+            actionInput.value = selectedAction;
+            form.appendChild(actionInput);
+
+            // Add version data based on action type
+            if (selectedAction === 'upgrade') {
+                // Add from versions (Flask expects 'fromVersions')
+                fromVersions.forEach(function(version) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'fromVersions';
+                    input.value = version;
+                    form.appendChild(input);
+                });
+
+                // Add upgrade to version (Flask expects 'upgradeToVersion')
+                if (upgradeToVersion) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'upgradeToVersion';
+                    input.value = upgradeToVersion;
+                    form.appendChild(input);
+                }
+            } else if (selectedAction === 'downgrade') {
+                // Add to versions (Flask expects 'toVersions')
+                toVersions.forEach(function(version) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'toVersions';
+                    input.value = version;
+                    form.appendChild(input);
+                });
+
+                // Add downgrade from version (Flask expects 'downgradeFromVersion')
+                if (downgradeFromVersion) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'downgradeFromVersion';
+                    input.value = downgradeFromVersion;
+                    form.appendChild(input);
+                }
+            }
+
+            // Handle image upload for load-new-image action
+            if (selectedAction === 'load-new-image') {
+                if (imageSource === 'upload' && selectedImageFile) {
+                    // Add upload method
+                    var uploadMethodInput = document.createElement('input');
+                    uploadMethodInput.type = 'hidden';
+                    uploadMethodInput.name = 'uploadMethod';
+                    uploadMethodInput.value = 'file';
+                    form.appendChild(uploadMethodInput);
+
+                    // Add the actual file
+                    var fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.name = 'imageFile';
+                    fileInput.files = document.getElementById('imageFileInput').files;
+                    fileInput.style.display = 'none';
+                    form.appendChild(fileInput);
+
+                } else if (imageSource === 'url' && imageUrl) {
+                    // Add upload method
+                    var uploadMethodInput = document.createElement('input');
+                    uploadMethodInput.type = 'hidden';
+                    uploadMethodInput.name = 'uploadMethod';
+                    uploadMethodInput.value = 'url';
+                    form.appendChild(uploadMethodInput);
+
+                    // Add image URL
+                    var urlInput = document.createElement('input');
+                    urlInput.type = 'hidden';
+                    urlInput.name = 'imageUrl';
+                    urlInput.value = imageUrl;
+                    form.appendChild(urlInput);
+                }
+            }
+
+            // Add sub-models with correct field names that Flask expects
+            var subModelMappings = [
+                { prefix: 'CSG700', fieldName: 'csg700Models' },
+                { prefix: 'CSG1000', fieldName: 'csg1000Models' },
+                { prefix: 'CSG2500', fieldName: 'csg2500Models' },
+                { prefix: 'CSG3000', fieldName: 'csg3000Models' },
+                { prefix: 'Dell', fieldName: 'dellModels' },
+                { prefix: 'Silicom', fieldName: 'silicomModels' }
+            ];
+
+            subModelMappings.forEach(function(mapping) {
+                var models = Object.keys(selectedSubModels)
+                    .filter(function(key) { return key.indexOf(mapping.prefix + '-') === 0 && selectedSubModels[key]; })
+                    .map(function(key) { return key.split('-')[1]; });
+
+                models.forEach(function(model) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = mapping.fieldName;
+                    input.value = model;
+                    form.appendChild(input);
+                });
+            });
+
+            // Show loading state
+            var submitBtn = document.getElementById('submitBtn');
+            var originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Submitting...';
+            submitBtn.disabled = true;
+
+            // Special handling for upgrade action - should redirect to validation report
+            if (selectedAction === 'upgrade') {
+                // For upgrade action, submit form and expect redirect to validation report
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                // For other actions, could show testing interface or handle differently
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function showTestingInterface() {
+            // Show testing interface
+            document.getElementById('mainForm').style.display = 'none';
+            document.getElementById('testingInterface').style.display = 'block';
+            
+            // Populate testing configuration
+            var configDiv = document.getElementById('testingConfig');
+            var allSelectedSubModels = Object.keys(selectedSubModels)
+                .filter(function(key) { return selectedSubModels[key]; })
+                .map(function(key) { return key.split('-')[1]; });
+            
+            var versionInfo = '';
+            var imageInfo = '';
+            
+            if (selectedAction === 'upgrade') {
+                versionInfo = 'From: ' + fromVersions.join(', ') + ' → To: ' + upgradeToVersion;
+            } else if (selectedAction === 'downgrade') {
+                versionInfo = 'From: ' + downgradeFromVersion + ' → To: ' + toVersions.join(', ');
+            } else if (selectedAction === 'load-new-image') {
+                if (imageSource === 'upload' && selectedImageFile) {
+                    imageInfo = 'File: ' + selectedImageFile.name + ' (' + formatFileSize(selectedImageFile.size) + ')';
+                } else if (imageSource === 'url' && imageUrl) {
+                    imageInfo = 'URL: ' + imageUrl;
+                }
+            }
+            
+            var configHtml = '<div><strong>Hardware Models:</strong> ' + selectedModels.join(', ') + '</div>';
+            if (allSelectedSubModels.length > 0) {
+                configHtml += '<div><strong>Sub-models:</strong> ' + allSelectedSubModels.join(', ') + '</div>';
+            }
+            configHtml += '<div><strong>Action:</strong> ' + selectedAction.charAt(0).toUpperCase() + selectedAction.slice(1).replace('-', ' ') + '</div>';
+            if (versionInfo) {
+                configHtml += '<div><strong>Versions:</strong> ' + versionInfo + '</div>';
+            }
+            if (imageInfo) {
+                configHtml += '<div><strong>Image Source:</strong> ' + imageInfo + '</div>';
+            }
+            
+            configDiv.innerHTML = configHtml;
+        }
+
+        function goBackToPortal() {
+            document.getElementById('testingInterface').style.display = 'none';
+            document.getElementById('mainForm').style.display = 'block';
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeHardwareModels();
+            
+            // Action select
+            document.getElementById('actionSelect').addEventListener('change', handleActionChange);
+            
+            // Version checkboxes
+            document.getElementById('from2211').addEventListener('change', function() { 
+                handleVersionCheckboxChange('22.1.1', 'from'); 
+            });
+            document.getElementById('from2212').addEventListener('change', function() { 
+                handleVersionCheckboxChange('22.1.2', 'from'); 
+            });
+            document.getElementById('from2213').addEventListener('change', function() { 
+                handleVersionCheckboxChange('22.1.3', 'from'); 
+            });
+            document.getElementById('to2211').addEventListener('change', function() { 
+                handleVersionCheckboxChange('22.1.1', 'to'); 
+            });
+            document.getElementById('to2212').addEventListener('change', function() { 
+                handleVersionCheckboxChange('22.1.2', 'to'); 
+            });
+            document.getElementById('to2213').addEventListener('change', function() { 
+                handleVersionCheckboxChange('22.1.3', 'to'); 
+            });
+            
+            // Version inputs
+            document.getElementById('upgradeToInput').addEventListener('input', function(e) { 
+                handleVersionInputChange(e.target.value, 'upgrade-to'); 
+            });
+            document.getElementById('downgradeFromInput').addEventListener('input', function(e) { 
+                handleVersionInputChange(e.target.value, 'downgrade-from'); 
+            });
+            
+            // Image source selection
+            document.getElementById('uploadFile').addEventListener('change', function() {
+                if (document.getElementById('uploadFile').checked) {
+                    handleImageSourceChange('upload');
+                }
+            });
+            document.getElementById('downloadUrl').addEventListener('change', function() {
+                if (document.getElementById('downloadUrl').checked) {
+                    handleImageSourceChange('url');
+                }
+            });
+            
+            // File upload
+            document.getElementById('imageFileInput').addEventListener('change', handleFileSelection);
+            
+            // URL input
+            document.getElementById('imageUrlInput').addEventListener('input', function(e) { 
+                handleImageUrlChange(e.target.value); 
+            });
+            
+            // Submit button
+            document.getElementById('submitBtn').addEventListener('click', handleSubmit);
+            
+            // Testing interface buttons
+            document.getElementById('backBtn').addEventListener('click', goBackToPortal);
+            document.getElementById('refreshBtn').addEventListener('click', function() { 
+                window.location.reload(); 
+            });
+        });
+    </script>
+</body>
+</html>

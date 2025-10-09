@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Versa FlexVNF Validation Report</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <style>
+    body { 
+      background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #0f3460 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: white;
+      min-height: 100vh;
+      padding: 2rem 0;
+    }
+    
+    .status-pass { 
+      background: linear-gradient(135deg, #00ff00, #32cd32);
+      color: black;
+      font-weight: 600;
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      display: inline-block;
+    }
+    
+    .status-fail { 
+      background: linear-gradient(135deg, #ff0000, #dc143c);
+      color: white;
+      font-weight: 600;
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      display: inline-block;
+    }
+    
+    .status-running {
+      background: linear-gradient(135deg, #0080ff, #0066cc);
+      color: white;
+      font-weight: 600;
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      display: inline-block;
+      animation: pulse 2s infinite;
+    }
+    
+    .header-section {
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(20px);
+      color: white;
+      padding: 2rem 0;
+      margin-bottom: 2rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .control-panel {
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(20px);
+      padding: 1.5rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(0, 100, 255, 0.3);
+      margin-bottom: 2rem;
+    }
+    
+    .host-table-container {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 1rem;
+      border: 1px solid rgba(0, 255, 0, 0.2);
+      overflow: hidden;
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 255, 0, 0.1);
+    }
+    
+    .host-table-header {
+      background: linear-gradient(135deg, #003300, #004d00);
+      color: #00ff00;
+      padding: 1rem;
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .connection-status {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+    .connected { background-color: #00ff00; }
+    .disconnected { background-color: #ff0000; }
+    .completed { background-color: #0080ff; }
+    
+    .animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .7; }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .error-message {
+      background: rgba(255, 0, 0, 0.2);
+      color: #ff6666;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid #ff0000;
+    }
+    
+    .success-message {
+      background: rgba(0, 255, 0, 0.2);
+      color: #66ff66;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid #00ff00;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    
+    .test-table {
+      background: rgba(0, 0, 0, 0.9);
+      border-radius: 0.5rem;
+      margin: 0;
+    }
+    
+    .test-table th {
+      background: rgba(0, 50, 0, 0.8);
+      color: #00ff00;
+      font-weight: 600;
+      border: 1px solid rgba(0, 255, 0, 0.2);
+      padding: 0.75rem;
+    }
+    
+    .test-table td {
+      border: 1px solid rgba(0, 255, 0, 0.1);
+      padding: 0.75rem;
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      vertical-align: top;
+    }
+    
+    .test-name {
+      font-weight: 500;
+      color: #00ff00;
+    }
+    
+    .debug-message {
+      color: #cccccc;
+      font-size: 0.9rem;
+      font-family: 'Courier New', monospace;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    
+    .host-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0080ff, #0066cc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 0.875rem;
+    }
+    
+    .overall-summary {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 1rem;
+      border: 1px solid rgba(0, 100, 255, 0.3);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .metric-card {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      border: 1px solid rgba(0, 255, 0, 0.2);
+    }
+    
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+      font-size: 0.875rem;
+      color: #cccccc;
+    }
+    
+    .text-info { color: #0080ff !important; }
+    .text-success { color: #00ff00 !important; }
+    .text-warning { color: #ffa500 !important; }
+    .text-danger { color: #ff0000 !important; }
+    
+    .btn-success {
+      background: linear-gradient(135deg, #00ff00, #32cd32);
+      border: none;
+      color: black;
+      font-weight: 600;
+    }
+    
+    .btn-warning {
+      background: linear-gradient(135deg, #ffa500, #ff8c00);
+      border: none;
+      color: white;
+      font-weight: 600;
+    }
+    
+    .btn-outline-light {
+      border-color: rgba(255, 255, 255, 0.5);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="header-section text-center">
+      <h1 class="mb-2 d-flex align-items-center justify-content-center gap-3">
+        <i class="fas fa-microchip text-success"></i>
+        Versa FlexVNF Validation Report
+      </h1>
+      <p class="mb-0">Real-time monitoring of upgrade/rollback execution with test results</p>
+    </div>
+    
+    <div class="container">
+      <div class="control-panel">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <h5 class="mb-0 d-flex align-items-center">
+              <span class="connection-status" id="connection-status"></span>
+              Connection Status: <span id="status-text">Disconnected</span>
+            </h5>
+          </div>
+          <div class="col-md-6 text-end">
+            <button class="btn btn-success me-2" onclick="startStreaming()" id="start-btn">
+              <i class="fas fa-play me-1"></i>Start Monitoring
+            </button>
+            <button class="btn btn-warning me-2" onclick="stopStreaming()" id="stop-btn" disabled>
+              <i class="fas fa-stop me-1"></i>Stop
+            </button>
+            <button class="btn btn-outline-light" onclick="clearData()">
+              <i class="fas fa-trash me-1"></i>Clear Data
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="error-container" style="display: none;">
+        <div class="error-message" id="error-message"></div>
+      </div>
+      
+      <div id="success-container" style="display: none;">
+        <div class="success-message" id="success-message"></div>
+      </div>
+
+      <div class="overall-summary">
+        <h4 class="mb-4 d-flex align-items-center gap-2">
+          <i class="fas fa-chart-pie text-info"></i>
+          Overall Execution Summary
+        </h4>
+        <div class="row g-3">
+          <div class="col-md-3">
+            <div class="metric-card">
+              <div class="metric-value text-info" id="total-hosts">0</div>
+              <div class="metric-label">Total Hosts</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="metric-card">
+              <div class="metric-value text-success" id="successful-hosts">0</div>
+              <div class="metric-label">Successful</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="metric-card">
+              <div class="metric-value text-warning" id="running-hosts">0</div>
+              <div class="metric-label">In Progress</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="metric-card">
+              <div class="metric-value text-danger" id="failed-hosts">0</div>
+              <div class="metric-label">Failed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="host-tables-container">
+        <div class="host-table-container">
+          <h4 class="host-table-header">
+            <i class="fas fa-server"></i>
+            Waiting for host data...
+          </h4>
+          <div class="p-4 text-center">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3 text-info"></i>
+            <p class="mb-0">No upgrade process running. Submit an upgrade form first, then click "Start Monitoring".</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let eventSource = null;
+    let hostData = {};
+    let isConnected = false;
+    let playbookCompleted = false;
+
+    const TEST_CASES = [
+      'Check current system details',
+      'Copying image to the respective folder',
+      'Checking if upgrade/downgrade is needed',
+      'Model info check',
+      'Package info check',
+      'lspci check',
+      'interfaces check',
+      'services check'
+    ];
+
+    const TASK_MAPPING = {
+      'Debug system details output': 'Check current system details',
+      'system details': 'Check current system details',
+      'Downloading firmware image': 'Copying image to the respective folder',
+      'Download': 'Copying image to the respective folder',
+      'Copying vos': 'Copying image to the respective folder',
+      'Ensure vos_23_1_1 build was copied successfully': 'Copying image to the respective folder',
+      'copied successfully': 'Copying image to the respective folder',
+      'Debug message for copy operation': 'Copying image to the respective folder',
+      'Log success when system is already on intended release and build': 'Checking if upgrade/downgrade is needed',
+      'already on intended': 'Checking if upgrade/downgrade is needed',
+      'Display message when already on target': 'Checking if upgrade/downgrade is needed',
+      'Perform upgrade': 'Checking if upgrade/downgrade is needed',
+      'Perform downgrade': 'Checking if upgrade/downgrade is needed',
+      'Monitor logs': 'Checking if upgrade/downgrade is needed',
+      'Manufacturer and model names': 'Model info check',
+      'device_model_info': 'Model info check',
+      'Success - lspci output matches': 'lspci check',
+      'lspci output matches expected': 'lspci check',
+      'vos_lspci_check': 'lspci check',
+      'Success - interfaces output matches': 'interfaces check',
+      'interfaces output matches expected': 'interfaces check',
+      'vos_interfaces_check': 'interfaces check',
+      'Success - system status is Good': 'services check',
+      'system status is Good': 'services check',
+      'vos_services_check': 'services check'
+    };
+
+    function mapTaskToTestCase(taskName) {
+      const lowerTask = taskName.toLowerCase();
+      for (const [key, testCase] of Object.entries(TASK_MAPPING)) {
+        if (lowerTask.includes(key.toLowerCase())) {
+          return testCase;
+        }
+      }
+      return null;
+    }
+
+    function normalizeHostname(hostname) {
+      if (hostname.includes('->')) {
+        hostname = hostname.split('->')[0].trim();
+      }
+      return hostname.trim();
+    }
+
+    function extractDebugMessage(taskName, details) {
+      const lowerTask = taskName.toLowerCase();
+      const lowerDetails = (details || '').toLowerCase();
+      
+      // Extract system build for initial check
+      if (lowerTask.includes('debug system details output') && details) {
+        const buildMatch = details.match(/versa-flexvnf-[^\s"',]+/i);
+        if (buildMatch) {
+          return `Currently running system build: ${buildMatch[0]}`;
+        }
+        return 'System details retrieved';
+      }
+      
+      // Download/Copy operation
+      if (lowerTask.includes('downloading') || lowerTask.includes('download')) {
+        if (lowerDetails.includes('progress') || lowerDetails.includes('%')) {
+          return details;
+        }
+        return 'Downloading image...';
+      }
+      
+      if (lowerTask.includes('copying vos')) {
+        return 'Copying image to device...';
+      }
+      
+      if (lowerTask.includes('copied successfully') || lowerTask.includes('debug message for copy')) {
+        return 'Image copied successfully';
+      }
+      
+      // Already on target check
+      if (lowerTask.includes('already on intended') || lowerTask.includes('already on target')) {
+        if (lowerDetails.includes('skipping')) {
+          return 'Image already on intended build. No upgrade/downgrade needed.';
+        }
+        return 'Checking if upgrade/downgrade is required';
+      }
+      
+      // Upgrade/Downgrade execution
+      if (lowerTask.includes('perform upgrade')) {
+        return 'Performing Upgrade';
+      }
+      if (lowerTask.includes('perform downgrade')) {
+        return 'Performing Downgrade';
+      }
+      
+      // Model info
+      if (lowerTask.includes('manufacturer and model')) {
+        const modelMatch = details.match(/Model:\s*([^\s",]+)/i);
+        if (modelMatch) {
+          return `Model: ${modelMatch[1]}`;
+        }
+        return 'Model information retrieved';
+      }
+      
+      // Package info - extract from validation phase
+      if (lowerTask.includes('debug system details output') && details) {
+        const packageMatch = details.match(/Package name\s+([^\s"',]+)/i);
+        if (packageMatch) {
+          return `Package name: ${packageMatch[1]}`;
+        }
+      }
+      
+      // lspci check
+      if (lowerTask.includes('lspci output matches')) {
+        return 'lspci output matched';
+      }
+      
+      // interfaces check
+      if (lowerTask.includes('interfaces output matches')) {
+        return 'Interfaces matched';
+      }
+      
+      // services check
+      if (lowerTask.includes('system status is good')) {
+        return 'System status is Good. All services are running.';
+      }
+      
+      return details || 'Task completed';
+    }
+
+    function updateConnectionStatus(connected, completed = false) {
+      isConnected = connected;
+      playbookCompleted = completed;
+      const statusElement = document.getElementById('connection-status');
+      const statusText = document.getElementById('status-text');
+      
+      if (completed) {
+        statusElement.className = 'connection-status completed';
+        statusText.textContent = 'Completed';
+      } else if (connected) {
+        statusElement.className = 'connection-status connected animate-pulse';
+        statusText.textContent = 'Connected';
+      } else {
+        statusElement.className = 'connection-status disconnected';
+        statusText.textContent = 'Disconnected';
+      }
+    }
+
+    function showError(message) {
+      const errorContainer = document.getElementById('error-container');
+      const errorMessage = document.getElementById('error-message');
+      errorMessage.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>${message}`;
+      errorContainer.style.display = 'block';
+      document.getElementById('success-container').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+      const successContainer = document.getElementById('success-container');
+      const successMessage = document.getElementById('success-message');
+      successMessage.innerHTML = `<i class="fas fa-check-circle me-2"></i>${message}`;
+      successContainer.style.display = 'block';
+      document.getElementById('error-container').style.display = 'none';
+    }
+
+    function hideMessages() {
+      document.getElementById('error-container').style.display = 'none';
+      document.getElementById('success-container').style.display = 'none';
+    }
+
+    function getStatusBadge(status) {
+      if (status === 'running') {
+        return '<span class="status-running"><i class="fas fa-spinner fa-spin me-1"></i>RUNNING</span>';
+      } else if (status === 'pass') {
+        return '<span class="status-pass"><i class="fas fa-check me-1"></i>PASS</span>';
+      } else if (status === 'fail') {
+        return '<span class="status-fail"><i class="fas fa-times me-1"></i>FAIL</span>';
+      }
+      return '<span style="color: #888;">Pending</span>';
+    }
+
+    function getHostInitials(hostname) {
+      return hostname.split('-').map(part => part.charAt(0).toUpperCase()).join('').substring(0, 2);
+    }
+
+    function initializeHostTests(hostname) {
+      if (!hostData[hostname]) {
+        hostData[hostname] = {
+          tests: {},
+          allCompleted: false,
+          hasFailures: false,
+          phaseTracker: {
+            initialSystemCheck: false,
+            copyImage: false,
+            checkTarget: false,
+            upgradeDowngrade: false,
+            validationStarted: false
+          }
+        };
+        
+        TEST_CASES.forEach(testCase => {
+          hostData[hostname].tests[testCase] = {
+            status: 'pending',
+            debugMessage: 'Waiting...'
+          };
+        });
+      }
+    }
+
+    function updateHostTable(hostname) {
+      const normalizedHostname = normalizeHostname(hostname);
+      
+      let hostTable = document.getElementById(`host-table-${normalizedHostname}`);
+      if (!hostTable) {
+        hostTable = createHostTable(normalizedHostname);
+      }
+
+      const tbody = hostTable.querySelector('tbody');
+      tbody.innerHTML = '';
+
+      const hostTests = hostData[normalizedHostname].tests;
+      
+      TEST_CASES.forEach(testCase => {
+        const test = hostTests[testCase];
+        const row = document.createElement('tr');
+        row.className = 'fade-in';
+        
+        row.innerHTML = `
+          <td><span class="test-name">${testCase}</span></td>
+          <td style="text-align: center;">${getStatusBadge(test.status)}</td>
+          <td><div class="debug-message">${test.debugMessage || 'Waiting...'}</div></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      const allTests = Object.values(hostTests);
+      const allCompleted = allTests.every(test => test.status !== 'pending' && test.status !== 'running');
+      const hasFailures = allTests.some(test => test.status === 'fail');
+      
+      hostData[normalizedHostname].allCompleted = allCompleted;
+      hostData[normalizedHostname].hasFailures = hasFailures;
+
+      const hostStatus = document.getElementById(`host-status-${normalizedHostname}`);
+      if (hostStatus) {
+        if (allCompleted) {
+          if (hasFailures) {
+            hostStatus.innerHTML = '<i class="fas fa-times text-danger"></i>';
+          } else {
+            hostStatus.innerHTML = '<i class="fas fa-check text-success"></i>';
+            showHostSuccessMessage(normalizedHostname);
+          }
+        } else {
+          hostStatus.innerHTML = '<i class="fas fa-spinner fa-spin text-info"></i>';
+        }
+      }
+    }
+
+    function showHostSuccessMessage(hostname) {
+      const hostTable = document.getElementById(`host-table-${hostname}`);
+      if (hostTable) {
+        let successDiv = hostTable.querySelector('.host-success-message');
+        if (!successDiv) {
+          successDiv = document.createElement('div');
+          successDiv.className = 'host-success-message success-message m-3';
+          successDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>Successfully executed all tasks for ' + hostname;
+          hostTable.appendChild(successDiv);
+        }
+      }
+    }
+
+    function createHostTable(hostname) {
+      const container = document.getElementById('host-tables-container');
+      
+      const placeholder = container.querySelector('.host-table-container h4');
+      if (placeholder && placeholder.textContent.includes('Waiting for host data')) {
+        container.innerHTML = '';
+      }
+
+      const tableContainer = document.createElement('div');
+      tableContainer.className = 'host-table-container fade-in';
+      tableContainer.id = `host-table-${hostname}`;
+      
+      tableContainer.innerHTML = `
+        <h4 class="host-table-header">
+          <div class="host-icon">${getHostInitials(hostname)}</div>
+          ${hostname}
+          <span class="ms-auto" id="host-status-${hostname}">
+            <i class="fas fa-spinner fa-spin text-info"></i>
+          </span>
+        </h4>
+        <div class="table-responsive">
+          <table class="table test-table mb-0">
+            <thead>
+              <tr>
+                <th style="width: 35%;">Test Name</th>
+                <th style="width: 15%; text-align: center;">Status</th>
+                <th style="width: 50%;">Debug Output</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      `;
+      
+      container.appendChild(tableContainer);
+      return tableContainer;
+    }
+
+    function updateOverallSummary() {
+      const hosts = Object.keys(hostData);
+      const totalHosts = hosts.length;
+      let successfulHosts = 0;
+      let runningHosts = 0;
+      let failedHosts = 0;
+
+      hosts.forEach(hostname => {
+        const host = hostData[hostname];
+        if (host.allCompleted) {
+          if (host.hasFailures) {
+            failedHosts++;
+          } else {
+            successfulHosts++;
+          }
+        } else {
+          runningHosts++;
+        }
+      });
+
+      document.getElementById('total-hosts').textContent = totalHosts;
+      document.getElementById('successful-hosts').textContent = successfulHosts;
+      document.getElementById('running-hosts').textContent = runningHosts;
+      document.getElementById('failed-hosts').textContent = failedHosts;
+
+      if (totalHosts > 0 && runningHosts === 0) {
+        if (failedHosts === 0) {
+          showSuccess('All hosts successfully completed all tasks!');
+        } else {
+          showError(`Execution completed with ${failedHosts} host(s) having failures.`);
+        }
+      }
+    }
+
+    function processTaskData(task) {
+      if (!task.host || task.host === 'pending') return;
+      
+      const hostname = normalizeHostname(task.host);
+      
+      // Skip localhost entries unless it's a download/copy task
+      if (hostname.toLowerCase() === 'localhost') {
+        const testCase = mapTaskToTestCase(task.name);
+        // Only allow localhost for copying/downloading tasks
+        if (testCase !== 'Copying image to the respective folder') {
+          return;
+        }
+      }
+      
+      initializeHostTests(hostname);
+      
+      const testCase = mapTaskToTestCase(task.name);
+      if (!testCase) return;
+
+      const hostTests = hostData[hostname].tests;
+      const tracker = hostData[hostname].phaseTracker;
+      
+      let status = 'running';
+      if (task.status === 'ok' || task.status === 'changed') {
+        status = 'pass';
+      } else if (task.status === 'failed' || task.status === 'unreachable') {
+        status = 'fail';
+      }
+
+      // Keep running status if task is actively downloading
+      if (task.name.toLowerCase().includes('downloading') && task.status === 'running') {
+        status = 'running';
+      }
+
+      // Extract appropriate debug message
+      const debugMessage = extractDebugMessage(task.name, task.details);
+
+      // Special handling for Package info check - needs to come from validation phase
+      if (testCase === 'Package info check') {
+        if (tracker.validationStarted && task.name.includes('Debug system details output')) {
+          hostTests[testCase] = { status, debugMessage };
+        } else if (!tracker.validationStarted) {
+          return;
+        }
+      } else {
+        hostTests[testCase] = { status, debugMessage };
+      }
+
+      // Track phases
+      if (testCase === 'Check current system details' && status === 'pass') {
+        tracker.initialSystemCheck = true;
+      }
+      if (testCase === 'Copying image to the respective folder' && status === 'pass') {
+        tracker.copyImage = true;
+      }
+      if (testCase === 'Checking if upgrade/downgrade is needed' && status === 'pass') {
+        tracker.checkTarget = true;
+      }
+      if (testCase === 'Model info check' && status === 'pass') {
+        tracker.validationStarted = true;
+      }
+
+      updateHostTable(hostname);
+      updateOverallSummary();
+    }
+
+    function checkForPlayRecap(line) {
+      if (line.includes('PLAY RECAP')) {
+        setTimeout(() => {
+          Object.keys(hostData).forEach(hostname => {
+            const allPassed = Object.values(hostData[hostname].tests).every(
+              test => test.status === 'pass'
+            );
+            if (allPassed) {
+              updateOverallSummary();
+            }
+          });
+        }, 1000);
+      }
+    }
+
+    function parseAnsibleOutput(data) {
+      if (data.type === 'tasks' && data.data && data.data.tasks) {
+        data.data.tasks.forEach(task => {
+          processTaskData(task);
+        });
+      }
+      
+      if (data.type === 'log' && data.message) {
+        checkForPlayRecap(data.message);
+      }
+    }
+
+    function startStreaming() {
+      if (eventSource) {
+        eventSource.close();
+      }
+
+      hideMessages();
+      playbookCompleted = false;
+      hostData = {};
+      updateConnectionStatus(true);
+      document.getElementById('start-btn').disabled = true;
+      document.getElementById('stop-btn').disabled = false;
+
+      eventSource = new EventSource('/submit');
+      
+      eventSource.onmessage = function(event) {
+        try {
+          const data = JSON.parse(event.data);
+          parseAnsibleOutput(data);
+          
+          if (data.type === 'complete') {
+            updateConnectionStatus(false, true);
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+          }
+        } catch (e) {
+          console.error('Error parsing data:', e);
+        }
+      };
+
+      eventSource.onerror = function() {
+        if (!playbookCompleted) {
+          showError('Connection error. Please check if the server is running.');
+          updateConnectionStatus(false);
+          document.getElementById('start-btn').disabled = false;
+          document.getElementById('stop-btn').disabled = true;
+        }
+      };
+    }
+
+    function stopStreaming() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+      updateConnectionStatus(false);
+      document.getElementById('start-btn').disabled = false;
+      document.getElementById('stop-btn').disabled = true;
+    }
+
+    function clearData() {
+      hostData = {};
+      document.getElementById('host-tables-container').innerHTML = `
+        <div class="host-table-container">
+          <h4 class="host-table-header">
+            <i class="fas fa-server"></i>
+            Waiting for host data...
+          </h4>
+          <div class="p-4 text-center">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3 text-info"></i>
+            <p class="mb-0">No upgrade process running. Submit an upgrade form first, then click "Start Monitoring".</p>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('total-hosts').textContent = '0';
+      document.getElementById('successful-hosts').textContent = '0';
+      document.getElementById('running-hosts').textContent = '0';
+      document.getElementById('failed-hosts').textContent = '0';
+      
+      hideMessages();
+    }
+
+    // Auto-start monitoring when page loads
+    window.addEventListener('load', function() {
+      setTimeout(startStreaming, 1000);
+    });
+
+    window.addEventListener('beforeunload', function() {
+      if (eventSource) {
+        eventSource.close();
+      }
+    });
+
+    updateConnectionStatus(false);
+  </script>
+</body>
+</html>

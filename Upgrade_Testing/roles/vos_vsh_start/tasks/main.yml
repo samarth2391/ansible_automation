@@ -1,0 +1,34 @@
+---
+# tasks/main.yml
+
+# Starting Versa Services
+- name: Starting vsh services (start)
+  shell: bash -lc "vsh start"
+  register: start_vsh_output
+  ignore_errors: yes
+
+- name: Waiting for 180 seconds for services and interfaces to come up
+  shell: sleep 180
+
+- name: Check vsh status after starting
+  shell: bash -lc "vsh status"
+  register: vsh_status_output
+  when: start_vsh_output.rc == 0 and start_vsh_output.failed == false
+  ignore_errors: yes
+
+- name: Debug msg to check versa-services after starting
+  debug:
+    var: vsh_status_output.stdout_lines
+
+- name: Verify all services are running
+  assert:
+    that:
+      - "(vsh_status_output.stdout_lines
+        | select('match', '^versa-.* is Running')
+        | list)
+        | length == (vsh_status_output.stdout_lines
+        | select('match', '^versa-')
+        | list)
+        | length"
+    fail_msg: "One or more services are not running"
+    success_msg: "All services are confirmed to be running."

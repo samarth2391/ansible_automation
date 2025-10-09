@@ -1,0 +1,125 @@
+## This role roll's back to 21.2.3 from current image running on host
+
+---
+# tasks/main.yml
+
+- name: Run vos_package_info to check for system details/CPU/build/ID
+  include_role:
+    name: vos_package_info
+  tags:
+    - run_build_info
+    - run_wsm_info
+    - run_system_id
+    - run_debug_info
+
+- name: Identify and set appropriate image/path for DUT (WSM or SNB)
+  set_fact:
+    vos_21_2_3: "{{ vos_21_2_3_wsm if is_wsm else vos_21_2_3_snb }}"
+
+- name: Set source path based for host based on WSM or SNB
+  set_fact:
+    source_path: "{{ src_path_21_2_3 }}{{ is_wsm | ternary('wsm', 'snb') }}/{{ vos_21_2_3 }}"
+
+- name: Debug source path address for following build is
+  debug:
+    msg: "Source path for vos_21_2_3 build: {{ source_path }}"
+
+- name: Copying vos_21_2_3 image to DUT
+  copy:
+    src: "{{ source_path }}"
+    dest: "{{ dest_path_vos }}"
+  register: scp_result
+
+- name: Ensure vos_21_2_3 build was copied successfully
+  fail:
+    msg: "Failed to copy vos_21_2_3 build to the destination"
+  when: scp_result.failed
+
+- name: Debug message for copy operation
+  debug:
+    msg: "vos_21_2_3 {{ vos_21_2_3 }} copied successfully to {{ dest_path_vos }}"
+
+- name: Removing extension bin to vos_21_2_3 existing name
+  set_fact:
+    vos_21_2_3_cmp: "{{ vos_21_2_3 | regex_replace('\\.bin$', '') }}"
+
+- name: Compare vos_21_2_3 and system_release IDs and determine action
+  block:
+    - name: Perform upgrade if system_release_id is lower or same as 21.2.3
+      shell: "{{ upgrade_package }} {{ vos_21_2_3 }} {{ confirm }}"
+      when:
+        - system_id[0] is version('21.2.3', '<=')
+        - system_build[0] != vos_21_2_3_cmp  # Or if build differs but release matches
+      register: upgrade_result
+
+    - name: Perform downgrade if system_release_id is higher than 21.2.3
+      shell: "{{ downgrade_package }} {{ vos_21_2_3 }} {{ confirm }}"
+      when: system_id[0] is version('21.2.3', '>')
+      register: downgrade_result
+  become: true
+  become_user: root
+  become_method: sudo
+
+- name: No action needed, System is already on the intended release and build
+  meta: end_play
+  when:
+    - system_id[0] is version('21.2.3', '==')
+    - system_build[0] == vos_21_2_3_cmp
+
+- name: Monitor logs for Upgrade or Downgrade progress
+  shell: |
+    tail -f /var/log/versa/upgrade.log |
+    grep -m 1 -E "Upgrade checkpoint #(3|4):.*" && echo "Checkpoint reached"
+  register: checkpoint_monitor
+  async: 1500  # Monitor logs for up to 25 minutes
+  poll: 5
+  when: upgrade_result is defined or downgrade_result is defined
+  ignore_errors: yes
+
+- name: Log monitoring failure to file on the control node
+  local_action:
+    module: lineinfile
+    path: "{{ upgrade_log }}"
+    line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAIL]: Upgrade from build {{ system_build[0] }} to {{ vos_21_2_3 }} on host {{ inventory_hostname }}."
+    create: yes
+    state: present
+  delegate_to: localhost
+  when: checkpoint_monitor is defined and checkpoint_monitor.failed
+
+- name: Handle upgrade/downgrade log monitoring timeout
+  fail:
+    msg: "Upgrade/Downgrade progress monitoring timed out after 25 minutes."
+  when: checkpoint_monitor.failed
+
+- name: Check for Reboot required or No reboot required for success upgrade
+  shell: |
+    tail -n 100 /var/log/versa/upgrade.log |
+    grep -E "Reboot required|No reboot required"
+  register: success_check
+  changed_when: false
+  async: 60
+  poll: 3
+  when: checkpoint_monitor.stdout_lines[1] == "Checkpoint reached"
+
+- name: Wait for target system to come back online (if rebooted)
+  wait_for_connection:
+    timeout: 600
+  register: connection_check
+  retries: 10
+  delay: 30
+  until: connection_check is succeeded
+  when: success_check.stdout | regex_search("(?<!No )Reboot required")
+  delegate_to: localhost
+
+- name: Log final decision and success to file on the control node
+  local_action:
+    module: lineinfile
+    path: "{{ upgrade_log }}"
+    line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [INFO]: OK Upgrade from build {{ system_build[0] }} to {{ vos_21_2_3 }} on host {{ inventory_hostname }}."
+    create: yes
+    state: present
+  delegate_to: localhost
+
+- name: Final decision output
+  debug:
+    msg: "Upgrade process completed for {{ vos_21_2_3 }}"

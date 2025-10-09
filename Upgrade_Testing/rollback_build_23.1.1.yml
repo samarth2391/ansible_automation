@@ -1,0 +1,248 @@
+## This task will rollback image to 23.1.1 from current image running on host
+
+- name: Run vos_package_info to check for system details/CPU/build/ID
+  include_role:
+    name: vos_package_info
+  tags:
+    - run_build_info
+    - run_wsm_info
+    - run_system_id
+    - run_debug_info
+
+- name: Find the SNB build file in the directory
+  find:
+    paths: "{{ src_path_23_1_1 }}snb/"
+    patterns: "versa-flexvnf-*-J.bin"
+    recurse: no
+  register: snb_files
+  delegate_to: localhost
+  run_once: true
+
+- name: Find the WSM build file in the directory
+  find:
+    paths: "{{ src_path_23_1_1 }}wsm/"
+    patterns: "versa-flexvnf-*-J-wsm.bin"
+    recurse: no
+  register: wsm_files
+  delegate_to: localhost
+  run_once: true
+
+- name: Set SNB build filename from found file
+  set_fact:
+    vos_23_1_1_snb: "{{ snb_files.files[0].path | basename }}"
+  when: snb_files.matched > 0
+
+- name: Set WSM build filename from found file
+  set_fact:
+    vos_23_1_1_wsm: "{{ wsm_files.files[0].path | basename }}"
+  when: wsm_files.matched > 0
+
+- name: Fail if no SNB build file found
+  fail:
+    msg: "No SNB build file found matching pattern versa-flexvnf-*-J.bin in {{ src_path_23_1_1 }}snb/"
+  when: snb_files.matched == 0
+
+- name: Fail if no WSM build file found
+  fail:
+    msg: "No WSM build file found matching pattern versa-flexvnf-*-J-wsm.bin in {{ src_path_23_1_1 }}wsm/"
+  when: wsm_files.matched == 0
+
+- name: Identify and set appropriate image/path for DUT (WSM or SNB)
+  set_fact:
+    vos_23_1_1: "{{ vos_23_1_1_wsm if is_wsm else vos_23_1_1_snb }}"
+
+- name: Set source path based for host based on WSM or SNB
+  set_fact:
+    source_path: "{{ src_path_23_1_1 }}{{ is_wsm | ternary('wsm', 'snb') }}/{{ vos_23_1_1 }}"
+
+- name: Debug source path address for following build is
+  debug:
+    msg: "Source path for vos_23_1_1 build: {{ source_path }}"
+
+- name: Copying vos_23_1_1 image to DUT
+  copy:
+    src: "{{ source_path }}"
+    dest: "{{ dest_path_vos }}" 
+  register: scp_result
+
+- name: Ensure vos_23_1_1 build was copied successfully
+  fail:
+    msg: "Failed to copy vos_23_1_1 build to the destination"
+  when: scp_result.failed
+
+- name: Debug message for copy operation
+  debug:
+    msg: "vos_23_1_1 {{ vos_23_1_1 }} copied successfully to {{ dest_path_vos }}"
+
+- name: Removing extension bin to vos_23_1_1 existing name
+  set_fact:
+    vos_23_1_1_cmp: "{{ vos_23_1_1 | regex_replace('\\.bin$', '') }}"
+
+# Check if system is already on target version
+- name: Check if system is already on target version
+  set_fact:
+    already_on_target: "{{ (system_id[0] is version('23.1.1', '==')) and (system_build[0] == vos_23_1_1_cmp) }}"
+
+- name: Log success when system is already on intended release and build
+  local_action:
+    module: lineinfile
+    path: "{{ upgrade_log }}"
+    line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [SUCCESS]: System already on target build {{ vos_23_1_1_cmp }} ({{ system_id[0] }}) on host {{ inventory_hostname }}. No action needed."
+    create: yes
+    state: present
+  when: already_on_target
+
+- name: Display message when already on target version
+  debug:
+    msg: "System is already on the intended release and build {{ vos_23_1_1_cmp }}. Skipping upgrade/downgrade but will continue with validation."
+  when: already_on_target
+
+# Only perform upgrade/downgrade if NOT already on target version
+- name: Compare vos_23_1_1 and system_release IDs and determine action
+  block:
+    - name: Perform upgrade if system_release_id is lower or same as 23.1.1
+      shell: "{{ upgrade_package }} {{ vos_23_1_1 }} {{ confirm }}"
+      when:
+        - system_id[0] is version('23.1.1', '<=') 
+        - system_build[0] != vos_23_1_1_cmp
+      register: upgrade_result
+
+    - name: Perform downgrade if system_release_id is higher than 23.1.1
+      shell: "{{ downgrade_package }} {{ vos_23_1_1 }} {{ confirm }}"
+      when: system_id[0] is version('23.1.1', '>')
+      register: downgrade_result
+
+    - name: Monitor logs for Upgrade or Downgrade progress
+      shell: |
+        tail -f /var/log/versa/upgrade.log |
+        grep -m 1 -E "Upgrade checkpoint #(3|4):.*" && echo "Checkpoint reached"
+      register: checkpoint_monitor
+      async: 1500
+      poll: 5
+      when: upgrade_result is defined or downgrade_result is defined
+      ignore_errors: yes
+
+    - name: Log monitoring failure to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAILED]: Upgrade from build {{ system_build[0] }} to {{ vos_23_1_1 }} on host {{ inventory_hostname }}."
+        create: yes
+        state: present
+      when: checkpoint_monitor is defined and checkpoint_monitor.failed
+
+    - name: Debug message to read checkpoint_monitor status
+      debug:
+        var: checkpoint_monitor.stdout_lines[1]
+      when: checkpoint_monitor is defined
+
+    - name: Handle upgrade/downgrade log monitoring timeout
+      fail:
+        msg: "Upgrade/Downgrade progress monitoring timed out after 25 minutes."
+      when: checkpoint_monitor is defined and checkpoint_monitor.failed
+
+    - name: Check for Reboot required or No reboot required for success upgrade
+      shell: |
+        tail -n 1000 /var/log/versa/upgrade.log |
+        grep -E "Reboot required|No reboot required"
+      register: success_check
+      changed_when: false
+      async: 90
+      poll: 3
+      when: checkpoint_monitor is defined and checkpoint_monitor.stdout_lines[1] == "Checkpoint reached"
+
+    - name: Debug message for essential reboot requirement
+      debug:
+        var: success_check.stdout_lines
+      when: success_check is defined
+
+    - name: Wait for target system to come back online (if rebooted)
+      block:
+        - name: Wait for SSH port to be available
+          wait_for:
+            host: "{{ ansible_host }}"
+            port: 22
+            delay: 10
+            timeout: 600
+            state: started
+          delegate_to: localhost
+          connection: local
+          
+        - name: Wait for system to be fully ready
+          wait_for_connection:
+            connect_timeout: 20
+            sleep: 5
+            delay: 10
+            timeout: 300
+          
+        - name: Verify system is responsive
+          command: uptime
+          changed_when: false
+          
+      when: 
+        - success_check is defined
+        - success_check.stdout | regex_search("(?<!No )Reboot required")
+
+    - name: System status after going soft reboot for kernel/udev rule changes
+      debug:
+        msg: "System is back online after soft reboot for kernel/udev rule changes."
+      when: 
+        - success_check is defined
+        - success_check.stdout | regex_search("(?<!No )Reboot required")
+
+    - name: Sleep for 120 seconds to stabilize Versa services
+      pause:
+        seconds: 120
+      when: upgrade_result is defined or downgrade_result is defined
+
+    - name: Log final decision and success to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [SUCCESS]: Upgrade from build {{ system_build[0] }} to {{ vos_23_1_1 }} on host {{ inventory_hostname }}."
+        create: yes
+        state: present
+      when: upgrade_result is defined or downgrade_result is defined
+
+    - name: Final decision output
+      debug:
+        msg: "Upgrade process completed for {{ vos_23_1_1 }}"
+      when: upgrade_result is defined or downgrade_result is defined
+
+  become: true
+  become_user: root
+  become_method: sudo
+  when: not already_on_target  # Only run upgrade/downgrade block if not already on target
+
+# Handle rollback failures
+- block:
+    - name: Some rollback task
+      command: /path/to/rollback/script.sh
+      register: rollback_task
+      ignore_errors: no
+
+  rescue:
+    - name: Log rollback failure
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAIL]: Rollback failed on host {{ inventory_hostname }}"
+        create: yes
+        state: present
+
+# Set completion status for this host - ALWAYS execute this
+- name: Set rollback completion status
+  set_fact:
+    rollback_completed: true
+    rollback_status: "{{ 'already_on_target' if already_on_target else ('success' if (upgrade_result.rc is defined and upgrade_result.rc == 0) or (downgrade_result.rc is defined and downgrade_result.rc == 0) else 'attempted') }}"
+
+# Log completion to indicate host is ready for validation - ALWAYS execute
+- name: Log host rollback completion with clear status
+  debug:
+    msg: |
+      "=========================================="
+      "Rollback phase completed for {{ inventory_hostname }}"
+      "Status: {{ rollback_status }}"
+      "Already on target: {{ already_on_target }}"
+      "Ready for post-installation validation"
+      "=========================================="

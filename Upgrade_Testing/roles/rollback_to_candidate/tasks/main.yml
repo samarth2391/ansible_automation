@@ -1,0 +1,160 @@
+## This role performs rollback to the candidate build
+
+---
+# tasks/main.yml
+
+- name: Run vos_package_info to check for system details/CPU/build/ID
+  include_role:
+    name: vos_package_info
+  tags:
+    - run_build_info
+    - run_wsm_info
+    - run_system_id
+    - run_debug_info
+
+- name: Set candidate_info_path based on WSM or SNB
+  set_fact:
+    candidate_info_path: "{{ src_cand_build_path }}{{ is_wsm | ternary('wsm', 'snb') }}/candidate_info"
+
+- name: Ensure candidate_info file exists
+  local_action:
+    module: stat
+    path: "{{ candidate_info_path }}"
+  register: candidate_info_file
+
+- name: Fail if candidate_info file is missing
+  fail:
+    msg: "The candidate_info file does not exist at {{ candidate_info_path }}"
+  when: not candidate_info_file.stat.exists
+
+- name: Decode and read candidate_info file
+  local_action:
+    module: slurp
+    src: "{{ candidate_info_path }}"
+  register: candidate_info_content
+
+- name: Split candidate_info_content into lines
+  set_fact:
+    candidate_info_lines: "{{ candidate_info_content.content | b64decode | split('\n') }}"
+
+- name: Extract candidate_build and candidate_id
+  set_fact:
+    candidate_info_lines: "{{ candidate_info_content.content | b64decode | split('\n') }}"
+    candidate_build_name: "{{ candidate_info_lines[0] | regex_replace('candidate_build: ', '') }}"
+    candidate_build_id: "{{ candidate_info_lines[1] | regex_replace('candidate_id: ', '') }}"
+  when: candidate_info_content.content is defined
+
+- name: Remove .bin extension for build comparison
+  set_fact:
+    candidate_build_name_cmp: "{{ candidate_build_name | regex_replace('\\.bin$', '') }}"
+
+- name: Debug candidate build details
+  debug:
+    msg:
+      - "Candidate Build: {{ candidate_build_name }}"
+      - "Candidate ID: {{ candidate_build_id }}"
+
+- name: Compare system_id and candidate_build_id to determine action
+  block:
+    - name: Perform upgrade if system_release_id <= candidate_build_id
+      shell: "{{ upgrade_package }} {{ candidate_build_name }} {{ confirm }}"
+      when:
+        - candidate_build_id[0] is version(system_id[0], '>=')
+        - system_build[0] != candidate_build_name_cmp
+      register: upgrade_result
+
+    - name: Perform downgrade if system_release_id > candidate_build_id
+      shell: "{{ downgrade_package }} {{ candidate_build_name }} {{ confirm }}"
+      when: 
+        - candidate_build_id[0] is version(system_id[0], '<')
+      register: downgrade_result
+  become: true
+  become_user: root
+  become_method: sudo
+
+- name: No action needed, System is already on the intended release and build
+  local_action:
+    module: lineinfile
+    path: "{{ upgrade_log }}"
+    line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [INFO]: System is already on the intended release and build ({{ system_build[0] }}) for host {{ inventory_hostname }}."
+    create: yes
+    state: present
+  when:
+    - candidate_build_id[0] is version(system_id[0], '==')
+    - system_build[0] == candidate_build_name_cmp
+
+- name: Handle upgrade or downgrade process
+  block:
+    - name: Monitor logs for upgrade/downgrade progress
+      shell: |
+        tail -f /var/log/versa/upgrade.log |
+        grep -m 1 -E "Reboot required|No reboot required" && echo "Checkpoint reached"
+      register: checkpoint_monitor
+      async: 1800
+      poll: 1
+      when: upgrade_result is defined or downgrade_result is defined
+      ignore_errors: yes
+
+    - name: System check if reboot is required after upgrade/downgrade process
+      set_fact:
+        reboot_required: "{{ 'Reboot required' in checkpoint_monitor.stdout }}"
+      when: checkpoint_monitor.rc == 0
+
+    - name: Host reboot required flag status 
+      debug:
+        var: reboot_required
+
+    - name: Log failure if log monitoring fails
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAIL]: Upgrade from build {{ system_build[0] }} to {{ candidate_build_name }} on host {{ inventory_hostname }}."
+        create: yes
+        state: present
+      when: checkpoint_monitor is defined and checkpoint_monitor.failed
+
+    - name: Debug message to read checkpoint_monitor status
+      debug:
+        var: checkpoint_monitor.stdout_lines[1]
+
+    - name: Handle upgrade/downgrade log monitoring timeout
+      fail:
+        msg: "Upgrade/Downgrade progress monitoring timed out after 30 minutes."
+      when: checkpoint_monitor.failed
+
+    - name: Sleep for 60 seconds if requires reboot when upgrade/downgrade process completed
+      pause:
+        seconds: 60
+      when: checkpoint_monitor.rc == 0
+
+    - name: Wait for system to come back online if reboot is required
+      wait_for_connection:
+        timeout: 1200
+      register: connection_check
+      retries: 240
+      delay: 5
+      until: connection_check is succeeded
+      when: checkpoint_monitor.rc == 0 and reboot_required | bool
+      delegate_to: localhost
+
+    - name: System status after going soft reboot for kernel/udev rule changes
+      debug:
+        msg: "System is back online after soft reboot for kernel/udev rule changes."
+      when: checkpoint_monitor.rc == 0 and reboot_required | bool
+
+    - name: Sleep for 300 seconds to stabilize services
+      pause:
+        seconds: 300
+
+    - name: Log final decision and success to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [INFO]: Upgrade from build {{ system_build[0] }} to {{ candidate_build_name }} OK on host {{ inventory_hostname }}."
+        create: yes
+        state: present
+  when: not (candidate_build_id[0] is version(system_id[0], '==') and system_build[0] == candidate_build_name_cmp)
+
+- name: Final decision output
+  debug:
+    msg: "Upgrade process completed for {{ candidate_build_name }}"

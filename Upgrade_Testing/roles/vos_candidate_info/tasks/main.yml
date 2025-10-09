@@ -1,0 +1,87 @@
+## vos_candidate_role has variable from global_vars.yml file, Ansible doesnt support,
+## it calling from role directly, it has to called from playbook explicitly
+
+
+---
+- name: Run vos_package_info to check if the system is WSM or SNB
+  include_role:
+    name: vos_package_info
+  tags:
+    run_build_info
+    run_wsm_info
+    run_system_id
+    run_debug_info
+
+- name: Set source directory based on CPU type
+  set_fact:
+    source_dir: "{{ is_wsm | ternary(src_path_candidate ~ 'wsm/', src_path_candidate ~ 'snb/') }}" 
+    
+- name: Debug source directory
+  debug:
+    msg: "Source directory is: {{ source_dir }}"
+
+- name: Find the image file in the source directory on control machine
+  local_action:
+    module: find
+    paths: "{{ source_dir }}"
+    patterns: "*.bin"
+    recurse: no
+  register: found_image
+
+- name: Fail if no image is found in the directory
+  fail:
+    msg: "No image found in {{ source_dir }}"
+  when: found_image.matched == 0
+
+- name: Set the candidate_build variable to the image file found
+  set_fact:
+    candidate_build: "{{ found_image.files[0].path | basename }}"
+
+- name: Debug check for the image file found
+  debug:
+    msg: "Candidate build: {{ candidate_build }}"
+
+- name: Extract candidate ID from candidate build
+  set_fact:
+    candidate_id: "{{ candidate_build | regex_search('\\d+\\.\\d+\\.\\d+', '\\0') }}"
+
+- name: Debug the extracted candidate ID
+  debug:
+    msg: "Candidate ID: {{ candidate_id }}"
+
+# Task to write candidate_build to a file in ~/ansible/var/tmp/
+- name: Ensure base tmp directory exists
+  local_action:  
+    module: file
+    path: "{{ src_cand_build_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Ensure base wsm directory exists
+  local_action:
+    module: file
+    path: "{{ src_cand_build_path }}wsm/"
+    state: directory
+    mode: '0755'
+
+- name: Ensure base snb directory exists
+  local_action:
+    module: file    
+    path: "{{ src_cand_build_path }}snb/"
+    state: directory
+    mode: '0755'
+
+    # Write both candidate_build and candidate_id to a file
+- name: Write candidate_build and candidate_id to a file
+  local_action:
+    module: copy
+    content: |
+      candidate_build: {{ candidate_build }}
+      candidate_id: {{ candidate_id }}
+    dest: "{{ is_wsm | ternary(src_cand_build_path + 'wsm/candidate_info', src_cand_build_path + 'snb/candidate_info') }}"
+    mode: '0644'
+
+    # Debug check for the content written
+- name: Debug check for file content
+  debug:
+    msg: "Candidate build and ID written to file: {{ is_wsm | ternary(src_cand_build_path + 'wsm/candidate_info', src_cand_build_path + 'snb/candidate_info') }}"

@@ -1,0 +1,43 @@
+## This role will execute show system package-info command and stores build info in system build,
+## is_wsm is binary true or false systen id, for example like 21.3.3 or 21.1.1 in system_id  
+## mainly intended to do upgrade or downgrade by comparing with running build
+
+
+---
+- name: Extract package details from system
+  shell: " echo 'show system package-info' | /opt/versa/confd/bin/confd_cli -u admin -g admin -N"
+  register: system_details
+  failed_when:
+    - system_details.rc != 0
+    - "'Failed to connect to server' in system_details.stderr_lines"
+
+- name: Debug system details output
+  debug:
+    var: system_details.stdout_lines
+
+- name: Extract system build info from system details
+  set_fact:
+    system_build: "{{ system_details.stdout | regex_search('Package name\\s+(.+)', '\\1') }}"
+  tags:
+    -  run_build_info
+
+- name: Determine if system is WSM or SNB
+  set_fact:
+    is_wsm: "{{ 'wsm' in (system_build | first) }}" ## 'wsm' in (system_build | first): Now, the check works on the string value instead of the list.
+  tags:
+    - run_wsm_info 
+
+- name: Extract system ID from package details
+  set_fact:
+    system_id: "{{ system_details.stdout | regex_search('Release\\s+(\\d+\\.\\d+\\.\\d+)', '\\1') }}"
+  tags:
+    - run_system_id
+
+- name: Debug extracted information
+  debug:
+    msg:
+      - "System build: {{ system_build }}"
+      - "Is WSM: {{ is_wsm }}"
+      - "System ID: {{ system_id }}"
+  tags:
+    - run_debug_info 

@@ -1,0 +1,25 @@
+---
+- name: Run whoami
+  command: whoami
+
+- name: Gather system manufacturer and model information from host device
+  include_role:
+    name: device_model_info
+
+- name: Run vos_package_info to check for system details/CPU/build/ID
+  include_role:
+    name: vos_package_info
+  tags:
+    - run_build_info
+
+- name: Verify Interface PCIe addresses are present on the host device
+  include_role:
+    name: vos_lspci_check
+
+- name: Verify VNI interfaces are present as expected
+  include_role:
+    name: vos_interfaces_check
+
+- name: Verify Versa services are running without degradation
+  include_role: 
+    name: vos_services_check

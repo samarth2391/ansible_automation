@@ -1,0 +1,18 @@
+---
+# vars/main.yml
+
+# [system_paths]
+dest_path_vos: "/home/versa/packages/"
+src_path_21_2_3: "/home/versa/ansible/vos_release_build/21_2_3/"
+
+# [vos_21_2_3]
+vos_21_2_3_wsm: "versa-flexvnf-20220730-150211-67ff6c7-21.2.3-B-wsm.bin"
+vos_21_2_3_snb: "versa-flexvnf-20220730-150211-67ff6c7-21.2.3-B.bin"
+
+# [vos_commands]
+upgrade_package: "/bin/bash -x /opt/versa/scripts/initiate-upgrade.sh upgrade package"
+downgrade_package: "/bin/bash -x /opt/versa/scripts/initiate-upgrade.sh downgrade package"
+confirm: "no-confirm __LEAF"
+
+# [Logs]
+upgrade_log: "/home/versa/ansible/logs/upgrade.log"

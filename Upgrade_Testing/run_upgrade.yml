@@ -1,0 +1,526 @@
+- name: Run upgrade playbook for build {{ build_version }}
+  hosts: all
+  vars_files:
+    - global_vars.yml
+  vars:
+    build: "{{ build_version }}"
+    upgrade_file: "rollback_build_{{ build_version }}.yml"
+    download_script: "/home/versa/git/ansible_automation/Upgrade_Testing/download_latest_image.py"
+  tasks:
+    - name: Initialize host completion status
+      set_fact:
+        host_completed: false
+        download_attempted: false
+        download_success: false
+        upgrade_attempted: false
+        upgrade_success: false
+        validation_attempted: false
+        validation_success: false
+
+    # Download latest image if requested using Python script
+    - name: Download latest image from builds.versa-networks.com
+      block:
+        - name: Set download attempt flag
+          set_fact:
+            download_attempted: true
+
+        - name: Check if Python download script exists
+          stat:
+            path: "{{ download_script }}"
+          register: script_stat
+          delegate_to: localhost
+
+        - name: Fail if download script not found
+          fail:
+            msg: "Download script not found at {{ download_script }}"
+          when: not script_stat.stat.exists
+
+        # NO pip install step - script has zero dependencies!
+        
+        - name: Run Python download script
+          shell: >
+            python3 {{ download_script }} {{ build_version }}
+            {{ '--manual-filename ' + manual_filename if manual_filename is defined else '' }}
+          delegate_to: localhost
+          register: download_output
+          environment:
+            PYTHONUNBUFFERED: "1"
+            PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          args:
+            executable: /bin/bash
+          changed_when: false
+          failed_when: false  # Don't fail - let rescue handle it
+
+        - name: Check download result
+          set_fact:
+            download_failed: "{{ download_output.rc != 0 }}"
+
+        - name: Display download output
+          debug:
+            msg: |
+              Download exit code: {{ download_output.rc }}
+              {% if download_output.stdout %}
+              Output: {{ download_output.stdout }}
+              {% endif %}
+              {% if download_output.stderr %}
+              Errors: {{ download_output.stderr }}
+              {% endif %}
+
+        - name: Fail if download did not succeed
+          fail:
+            msg: "Download failed with exit code {{ download_output.rc }}"
+          when: download_output.rc != 0
+
+        - name: Set download success flag
+          set_fact:
+            download_success: true
+
+        - name: Parse download results
+          set_fact:
+            upgrade_image_path: "{{ download_output.stdout | regex_search('Location: (.+)', '\\1') | first | default('') }}"
+          when: 
+            - download_output.stdout is defined
+            - download_output.stdout | length > 0
+
+        - name: Log download success
+          debug:
+            msg: |
+              "=========================================="
+              "DOWNLOAD SUCCESS for {{ inventory_hostname }}"
+              "Latest image downloaded successfully"
+              "Image path: {{ upgrade_image_path | default('N/A') }}"
+              "=========================================="
+
+      rescue:
+        - name: Set download failure flag
+          set_fact:
+            download_success: false
+
+        - name: Log download failure with details
+          debug:
+            msg: |
+              "=========================================="
+              "DOWNLOAD FAILED for {{ inventory_hostname }}"
+              "Exit code: {{ download_output.rc | default('N/A') }}"
+              "This may be a network/connectivity issue when running via Ansible"
+              "The script worked when run directly, so the issue is likely:"
+              "  1. Ansible localhost network context is different"
+              "  2. Proxy/firewall blocking Ansible's network access"
+              "  3. Environment variables not set correctly"
+              ""
+              "Will check for existing image and continue..."
+              "=========================================="
+
+        - name: Check if image already exists from previous download
+          stat:
+            path: "/home/versa/git/ansible_automation/Upgrade_Testing/vos_release_build/{{ build_version.replace('.', '_') }}/snb/"
+          register: snb_dir
+          delegate_to: localhost
+
+        - name: Find existing SNB image
+          find:
+            paths: "/home/versa/git/ansible_automation/Upgrade_Testing/vos_release_build/{{ build_version.replace('.', '_') }}/snb/"
+            patterns: "versa-flexvnf-*-J.bin"
+          register: existing_snb_images
+          delegate_to: localhost
+          when: snb_dir.stat.exists
+
+        - name: Check if image already exists from previous download (WSM)
+          stat:
+            path: "/home/versa/git/ansible_automation/Upgrade_Testing/vos_release_build/{{ build_version.replace('.', '_') }}/wsm/"
+          register: wsm_dir
+          delegate_to: localhost
+
+        - name: Find existing WSM image
+          find:
+            paths: "/home/versa/git/ansible_automation/Upgrade_Testing/vos_release_build/{{ build_version.replace('.', '_') }}/wsm/"
+            patterns: "versa-flexvnf-*-J-wsm.bin"
+          register: existing_wsm_images
+          delegate_to: localhost
+          when: wsm_dir.stat.exists
+
+        - name: Use existing image if found
+          debug:
+            msg: |
+              "Found existing image(s):"
+              "  SNB: {{ existing_snb_images.files | map(attribute='path') | list if existing_snb_images.matched is defined and existing_snb_images.matched > 0 else 'None' }}"
+              "  WSM: {{ existing_wsm_images.files | map(attribute='path') | list if existing_wsm_images.matched is defined and existing_wsm_images.matched > 0 else 'None' }}"
+              "Will use existing image for upgrade"
+          when: (existing_snb_images.matched is defined and existing_snb_images.matched > 0) or (existing_wsm_images.matched is defined and existing_wsm_images.matched > 0)
+
+        - name: Set download success if existing image found
+          set_fact:
+            download_success: true
+            download_used_existing: true
+          when: (existing_snb_images.matched is defined and existing_snb_images.matched > 0) or (existing_wsm_images.matched is defined and existing_wsm_images.matched > 0)
+
+        - name: Write download issue to log
+          local_action:
+            module: lineinfile
+            path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+            line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [DOWNLOAD_ISSUE]: Could not download new image for {{ build_version }} on host {{ inventory_hostname }}, {{ 'using existing image' if download_success else 'no existing image found' }}"
+            create: yes
+            state: present
+
+      when: download_latest is defined and download_latest | bool
+
+    # Run the upgrade
+    - name: Run upgrade playbook
+      block:
+        - name: Set upgrade attempt flag
+          set_fact:
+            upgrade_attempted: true
+
+        - name: Include upgrade tasks
+          include_tasks: "{{ upgrade_file }}"
+          register: upgrade_to_candidate_result
+
+        - name: Set upgrade completion status after successful execution
+          set_fact:
+            upgrade_success: true
+            
+      rescue:
+        - name: Set upgrade completion status after failure
+          set_fact:
+            upgrade_success: false
+
+        - name: Log upgrade failure
+          debug:
+            msg: |
+              "=========================================="
+              "UPGRADE FAILED for {{ inventory_hostname }}"
+              "Error occurred during upgrade execution"
+              "Will still attempt validation"
+              "=========================================="
+
+    - name: Display upgrade completion status
+      debug:
+        msg: |
+          "=========================================="
+          "Host: {{ inventory_hostname }}"
+          "Download attempted: {{ download_attempted }}"
+          "Download success: {{ download_success }}"
+          "Used existing image: {{ download_used_existing | default(false) }}"
+          "Upgrade attempted: {{ upgrade_attempted }}"
+          "Upgrade success: {{ upgrade_success }}"
+          "Proceeding to validation phase..."
+          "=========================================="
+
+    # ALWAYS run post-installation validation regardless of upgrade outcome
+    - name: Validate upgrade with post-installation-check verification
+      block:
+        - name: Set validation attempt flag
+          set_fact:
+            validation_attempted: true
+
+        - name: Run post-installation validation
+          include_tasks: validate_post_install.yml
+          register: validation_result
+
+        - name: Set validation success flag
+          set_fact:
+            validation_success: true
+
+        - name: Log validation success
+          debug:
+            msg: |
+              "=========================================="
+              "VALIDATION SUCCESS for {{ inventory_hostname }}"
+              "Post-installation check completed successfully"
+              "=========================================="
+
+        - name: Log validation success to file
+          local_action:
+            module: lineinfile
+            path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+            line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [VALIDATION_SUCCESS]: Post-installation validation succeeded on host {{ inventory_hostname }}"
+            create: yes
+            state: present
+
+      rescue:
+        - name: Set validation failure flag
+          set_fact:
+            validation_success: false
+
+        - name: Log validation failure
+          debug:
+            msg: |
+              "=========================================="
+              "VALIDATION FAILED for {{ inventory_hostname }}"
+              "Post-installation check encountered errors"
+              "=========================================="
+
+        - name: Log validation failure to file
+          local_action:
+            module: lineinfile
+            path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+            line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [VALIDATION_FAILED]: Post-installation validation failed on host {{ inventory_hostname }}"
+            create: yes
+            state: present
+
+    - name: Set final host completion status
+      set_fact:
+        host_completed: true
+
+    - name: Final host status summary
+      debug:
+        msg: |
+          "=========================================="
+          "FINAL STATUS for {{ inventory_hostname }}"
+          "Download attempted: {{ download_attempted }}"
+          "Download successful: {{ download_success }}"
+          "Used existing image: {{ download_used_existing | default(false) }}"
+          "Upgrade attempted: {{ upgrade_attempted }}"
+          "Upgrade successful: {{ upgrade_success }}"
+          "Validation attempted: {{ validation_attempted }}"
+          "Validation successful: {{ validation_success }}"
+          "Host processing completed: {{ host_completed }}"
+          "=========================================="
+
+    - name: Log final host completion to file
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [HOST_COMPLETED]: Processing completed for {{ inventory_hostname }} - Download: {{ download_success | ternary('SUCCESS', 'SKIPPED/FAILED') }}{{ ' (existing)' if download_used_existing | default(false) else '' }}, Upgrade: {{ upgrade_success | ternary('SUCCESS', 'FAILED') }}, Validation: {{ validation_success | ternary('SUCCESS', 'FAILED') }}"
+        create: yes
+        state: present
+
+
+    # Run the upgrade
+    - name: Run upgrade playbook
+      block:
+        - name: Set upgrade attempt flag
+          set_fact:
+            upgrade_attempted: true
+
+        - name: Include upgrade tasks
+          include_tasks: "{{ upgrade_file }}"
+          register: upgrade_to_candidate_result
+
+        - name: Set upgrade completion status after successful execution
+          set_fact:
+            upgrade_success: true
+            
+      rescue:
+        - name: Set upgrade completion status after failure
+          set_fact:
+            upgrade_success: false
+
+        - name: Log upgrade failure
+          debug:
+            msg: |
+              "=========================================="
+              "UPGRADE FAILED for {{ inventory_hostname }}"
+              "Error occurred during upgrade execution"
+              "Will still attempt validation"
+              "=========================================="
+
+    - name: Display upgrade completion status
+      debug:
+        msg: |
+          "=========================================="
+          "Host: {{ inventory_hostname }}"
+          "Download attempted: {{ download_attempted }}"
+          "Download success: {{ download_success }}"
+          "Upgrade attempted: {{ upgrade_attempted }}"
+          "Upgrade success: {{ upgrade_success }}"
+          "Proceeding to validation phase..."
+          "=========================================="
+
+    # ALWAYS run post-installation validation regardless of upgrade outcome
+    - name: Validate upgrade with post-installation-check verification
+      block:
+        - name: Set validation attempt flag
+          set_fact:
+            validation_attempted: true
+
+        - name: Run post-installation validation
+          include_tasks: validate_post_install.yml
+          register: validation_result
+
+        - name: Set validation success flag
+          set_fact:
+            validation_success: true
+
+        - name: Log validation success
+          debug:
+            msg: |
+              "=========================================="
+              "VALIDATION SUCCESS for {{ inventory_hostname }}"
+              "Post-installation check completed successfully"
+              "=========================================="
+
+        - name: Log validation success to file
+          local_action:
+            module: lineinfile
+            path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+            line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [VALIDATION_SUCCESS]: Post-installation validation succeeded on host {{ inventory_hostname }}"
+            create: yes
+            state: present
+
+      rescue:
+        - name: Set validation failure flag
+          set_fact:
+            validation_success: false
+
+        - name: Log validation failure
+          debug:
+            msg: |
+              "=========================================="
+              "VALIDATION FAILED for {{ inventory_hostname }}"
+              "Post-installation check encountered errors"
+              "=========================================="
+
+        - name: Log validation failure to file
+          local_action:
+            module: lineinfile
+            path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+            line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [VALIDATION_FAILED]: Post-installation validation failed on host {{ inventory_hostname }}"
+            create: yes
+            state: present
+
+    - name: Set final host completion status
+      set_fact:
+        host_completed: true
+
+    - name: Final host status summary
+      debug:
+        msg: |
+          "=========================================="
+          "FINAL STATUS for {{ inventory_hostname }}"
+          "Download attempted: {{ download_attempted }}"
+          "Download successful: {{ download_success }}"
+          "Upgrade attempted: {{ upgrade_attempted }}"
+          "Upgrade successful: {{ upgrade_success }}"
+          "Validation attempted: {{ validation_attempted }}"
+          "Validation successful: {{ validation_success }}"
+          "Host processing completed: {{ host_completed }}"
+          "=========================================="
+
+    - name: Log final host completion to file
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [HOST_COMPLETED]: Processing completed for {{ inventory_hostname }} - Download: {{ download_success | ternary('SUCCESS', 'SKIPPED/FAILED') }}, Upgrade: {{ upgrade_success | ternary('SUCCESS', 'FAILED') }}, Validation: {{ validation_success | ternary('SUCCESS', 'FAILED') }}"
+        create: yes
+        state: present
+
+
+    # Run the upgrade
+    - name: Run upgrade playbook
+      block:
+        - name: Set upgrade attempt flag
+          set_fact:
+            upgrade_attempted: true
+
+        - name: Include upgrade tasks
+          include_tasks: "{{ upgrade_file }}"
+          register: upgrade_to_candidate_result
+
+        - name: Set upgrade completion status after successful execution
+          set_fact:
+            upgrade_success: true
+            
+      rescue:
+        - name: Set upgrade completion status after failure
+          set_fact:
+            upgrade_success: false
+
+        - name: Log upgrade failure
+          debug:
+            msg: |
+              "=========================================="
+              "UPGRADE FAILED for {{ inventory_hostname }}"
+              "Error occurred during upgrade execution"
+              "Will still attempt validation"
+              "=========================================="
+
+    - name: Display upgrade completion status
+      debug:
+        msg: |
+          "=========================================="
+          "Host: {{ inventory_hostname }}"
+          "Download attempted: {{ download_attempted }}"
+          "Download success: {{ download_success }}"
+          "Upgrade attempted: {{ upgrade_attempted }}"
+          "Upgrade success: {{ upgrade_success }}"
+          "Proceeding to validation phase..."
+          "=========================================="
+
+    # ALWAYS run post-installation validation regardless of upgrade outcome
+    - name: Validate upgrade with post-installation-check verification
+      block:
+        - name: Set validation attempt flag
+          set_fact:
+            validation_attempted: true
+
+        - name: Run post-installation validation
+          include_tasks: validate_post_install.yml
+          register: validation_result
+
+        - name: Set validation success flag
+          set_fact:
+            validation_success: true
+
+        - name: Log validation success
+          debug:
+            msg: |
+              "=========================================="
+              "VALIDATION SUCCESS for {{ inventory_hostname }}"
+              "Post-installation check completed successfully"
+              "=========================================="
+
+        - name: Log validation success to file
+          local_action:
+            module: lineinfile
+            path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+            line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [VALIDATION_SUCCESS]: Post-installation validation succeeded on host {{ inventory_hostname }}"
+            create: yes
+            state: present
+
+      rescue:
+        - name: Set validation failure flag
+          set_fact:
+            validation_success: false
+
+        - name: Log validation failure
+          debug:
+            msg: |
+              "=========================================="
+              "VALIDATION FAILED for {{ inventory_hostname }}"
+              "Post-installation check encountered errors"
+              "=========================================="
+
+        - name: Log validation failure to file
+          local_action:
+            module: lineinfile
+            path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+            line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [VALIDATION_FAILED]: Post-installation validation failed on host {{ inventory_hostname }}"
+            create: yes
+            state: present
+
+    - name: Set final host completion status
+      set_fact:
+        host_completed: true
+
+    - name: Final host status summary
+      debug:
+        msg: |
+          "=========================================="
+          "FINAL STATUS for {{ inventory_hostname }}"
+          "Download attempted: {{ download_attempted }}"
+          "Download successful: {{ download_success }}"
+          "Upgrade attempted: {{ upgrade_attempted }}"
+          "Upgrade successful: {{ upgrade_success }}"
+          "Validation attempted: {{ validation_attempted }}"
+          "Validation successful: {{ validation_success }}"
+          "Host processing completed: {{ host_completed }}"
+          "=========================================="
+
+    - name: Log final host completion to file
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log | default('/var/log/ansible/upgrade.log') }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [HOST_COMPLETED]: Processing completed for {{ inventory_hostname }} - Download: {{ download_success | ternary('SUCCESS', 'SKIPPED/FAILED') }}, Upgrade: {{ upgrade_success | ternary('SUCCESS', 'FAILED') }}, Validation: {{ validation_success | ternary('SUCCESS', 'FAILED') }}"
+        create: yes
+        state: present

@@ -1,0 +1,71 @@
+## This role checks for system health on host devices
+## Any services stopped results in failure of verification
+
+---
+- name: Verify show system status matches system_status_check
+  shell: " echo 'show system status' | /opt/versa/confd/bin/confd_cli -u admin -g admin -N"
+  register: system_status_output
+  failed_when: system_status_output.rc != 0
+  ignore_errors: yes
+
+- name: Debug output host current running system health
+  debug:
+    msg: "{{ system_status_output.stdout_lines }}"
+
+- name: Extract system status and stopped versa services 
+  set_fact:
+    system_status: "{{
+      system_status_output.stdout_lines
+      | select('search', '^Status: ')
+      | map('regex_replace', '^Status:\\s*', '')
+      | first | default('Unknown')
+    }}"
+
+    stopped_services: "{{
+      system_status_output.stdout_lines
+      | select('search', 'stopped')
+      | map('regex_replace', '^(versa-.*)\\s+stopped$', '\\1')
+      | map('split', ' ')
+      | map('first')
+      | list
+    }}"
+
+- name: Debug extracted raw system status and versa-stopped services
+  debug:
+    msg:
+      - "System Status: {{ system_status }}"
+      - "Stopped Services: {{ stopped_services }}"
+
+- name: Check and log system status
+  block:
+    - name: Log system status failure to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: " [{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAIL]: With build {{ system_build[0] }} system status error on host {{ inventory_hostname }}, Stopped services: {{ stopped_services | join(', ') }}."
+        create: yes
+        state: present
+      ignore_errors: yes
+
+    - name: Fail the play if system status is Degraded
+      fail:
+        msg: >-
+          System status is Degraded. The following services are not running:
+          {{ stopped_services | join(', ') }}
+  when: system_status == "Degraded" and stopped_services | length > 0
+  ignore_errors: yes
+
+- name: Handle successful system status check
+  block:
+    - name: Success - system status is Good all versa services are running
+      debug:
+        msg: "System status is Good. All services are running."
+
+    - name: Log successful system status to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [INFO]: With build {{ system_build[0] }} system status OK on host {{ inventory_hostname }}."
+        create: yes
+        state: present
+  when: system_status == "Good"

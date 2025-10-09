@@ -1,0 +1,31 @@
+---
+# tasks/main.yml
+
+- name: Run vos_package_info to check if the system is WSM or SNB and set candidate build
+  include_role:
+    name: vos_candidate_info
+
+- name: Set source path based on WSM or SNB
+  set_fact:
+    source_path: "{{ source_dir }}{{ candidate_build }}"
+
+- name: Debug source path
+  debug:
+    msg: "Source path for candidate build: {{ source_path }}"
+
+- name: Copy candidate build to DUT
+  copy:
+    src: "{{ source_path }}"
+    dest: "{{ dest_path_vos }}"
+  register: scp_result
+  ignore_errors: true  # Handle any copy errors gracefully
+
+- name: Ensure the candidate build was copied successfully
+  fail:
+    msg: "Failed to copy the candidate build to the destination"
+  when: scp_result.failed
+
+- name: Debug message for copy operation
+  debug:
+    msg: "Candidate build {{ candidate_build }} copied successfully to {{ dest_path_vos }}"
+

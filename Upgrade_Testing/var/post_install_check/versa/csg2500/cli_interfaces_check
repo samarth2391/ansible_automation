@@ -1,0 +1,23 @@
+NAME       MAC                OPER  ADMIN  TENANT  VRF     IP
+-----------------------------------------------------------------------------------------
+eth-0/0    c4:00:ad:b9:3b:71  up    up     0       global  fe80::c600:adff:feb9:3b71/64
+vni-0/0    c4:00:ad:d5:b2:3e  down  down   -       -
+vni-0/1    c4:00:ad:d5:a7:c8  down  down   -       -
+vni-0/10   c4:00:ad:b9:45:ba  down  down   -       -
+vni-0/100  02:aa:bb:cc:dd:01  down  down   -       -
+vni-0/101  02:aa:bb:cc:dd:02  down  down   -       -
+vni-0/102  02:aa:bb:cc:dd:03  down  down   -       -
+vni-0/103  02:aa:bb:cc:dd:04  down  down   -       -
+vni-0/11   c4:00:ad:b9:45:bb  down  down   -       -
+vni-0/12   c4:00:ad:b9:46:38  down  down   -       -
+vni-0/13   c4:00:ad:b9:46:39  down  down   -       -
+vni-0/14   c4:00:ad:b9:46:3a  down  down   -       -
+vni-0/15   c4:00:ad:b9:46:3b  down  down   -       -
+vni-0/2    c4:00:ad:d5:b2:3f  down  down   -       -
+vni-0/3    c4:00:ad:d5:a7:c9  down  down   -       -
+vni-0/4    c4:00:ad:d5:b2:40  down  down   -       -
+vni-0/5    c4:00:ad:d5:a7:ca  down  down   -       -
+vni-0/6    c4:00:ad:d5:b2:41  down  down   -       -
+vni-0/7    c4:00:ad:d5:a7:cb  down  down   -       -
+vni-0/8    c4:00:ad:b9:45:b8  down  down   -       -
+vni-0/9    c4:00:ad:b9:45:b9  down  down   -       -

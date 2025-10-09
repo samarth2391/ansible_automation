@@ -1,0 +1,15 @@
+---
+# vars/main.yml
+
+# [system_paths]
+src_cand_build_path: "/home/versa/ansible/var/tmp/"
+
+# [vos_commands]
+upgrade_package: "/bin/bash -x /opt/versa/scripts/initiate-upgrade.sh upgrade package"
+downgrade_package: "/bin/bash -x /opt/versa/scripts/initiate-upgrade.sh downgrade package"
+confirm: "no-confirm __LEAF"
+flag: "test"
+
+# [ Logs ]
+upgrade_log: "/home/versa/ansible/logs/upgrade.log"
+

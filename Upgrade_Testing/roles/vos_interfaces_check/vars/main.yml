@@ -1,0 +1,10 @@
+---
+# vars/main.yml
+
+# [ Logs ]
+upgrade_log:            "/home/versa/ansible/logs/upgrade.log"
+
+# [CDB Paths]
+a_cdb:                  "/opt/versa/confd/var/confd/cdb/A.cdb"
+c_cdb:                  "/opt/versa/confd/var/confd/cdb/C.cdb"
+o_cdb:                  "/opt/versa/confd/var/confd/cdb/O.cdb"

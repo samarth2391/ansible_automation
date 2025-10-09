@@ -1,0 +1,5 @@
+---
+# vars/main.yml
+
+# [system_paths]
+dest_path_vos:          "/home/versa/packages/"

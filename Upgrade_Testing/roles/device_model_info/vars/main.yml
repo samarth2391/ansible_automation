@@ -1,0 +1,5 @@
+---
+# vars/main.yml
+
+# [system_paths]
+src_path_post_check:    "/home/versa/Hardware_Test_Portal/Upgrade_Testing/var/post_install_check/"

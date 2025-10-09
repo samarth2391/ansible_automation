@@ -1,0 +1,41 @@
+NAME       MAC                OPER  ADMIN  TENANT  VRF     IP
+-----------------------------------------------------------------------------------------
+eth-0/0    ac:43:30:f8:f5:80  up    up     0       global  fe80::ae43:30ff:fef8:f580/64
+enet-0/10  ac:43:30:f8:f5:a0  down  down   -       -
+enet-0/11  ac:43:30:f8:f5:9f  down  down   -       -
+enet-0/12  ac:43:30:f8:f5:a2  down  down   -       -
+enet-0/13  ac:43:30:f8:f5:a1  down  down   -       -
+enet-0/14  ac:43:30:f8:f5:a4  down  down   -       -
+enet-0/15  ac:43:30:f8:f5:a3  down  down   -       -
+enet-0/16  ac:43:30:f8:f5:a6  down  down   -       -
+enet-0/17  ac:43:30:f8:f5:a5  down  down   -       -
+enet-0/18  ac:43:30:f8:f5:a8  down  down   -       -
+enet-0/19  ac:43:30:f8:f5:a7  down  down   -       -
+enet-0/20  ac:43:30:f8:f5:aa  down  down   -       -
+enet-0/21  ac:43:30:f8:f5:a9  down  down   -       -
+enet-0/22  ac:43:30:f8:f5:ac  down  down   -       -
+enet-0/23  ac:43:30:f8:f5:ab  down  down   -       -
+enet-0/24  ac:43:30:f8:f5:ae  down  down   -       -
+enet-0/25  ac:43:30:f8:f5:ad  down  down   -       -
+enet-0/26  ac:43:30:f8:f5:b0  down  down   -       -
+enet-0/27  ac:43:30:f8:f5:af  down  down   -       -
+enet-0/28  ac:43:30:f8:f5:b1  down  down   -       -
+enet-0/29  ac:43:30:f8:f5:b2  down  down   -       -
+enet-0/30  ac:43:30:f8:f5:b3  down  down   -       -
+enet-0/31  ac:43:30:f8:f5:b4  down  down   -       -
+enet-0/32  ac:43:30:f8:f5:c5  down  down   -       -
+enet-0/36  ac:43:30:f8:f5:c1  down  down   -       -
+enet-0/4   ac:43:30:f8:f5:9a  down  down   -       -
+enet-0/5   ac:43:30:f8:f5:99  down  down   -       -
+enet-0/6   ac:43:30:f8:f5:9c  down  down   -       -
+enet-0/7   ac:43:30:f8:f5:9b  down  down   -       -
+enet-0/8   ac:43:30:f8:f5:9e  down  down   -       -
+enet-0/9   ac:43:30:f8:f5:9d  down  down   -       -
+vni-0/0    ac:43:30:f8:f5:82  down  down   -       -
+vni-0/1    ac:43:30:f8:f5:83  down  down   -       -
+vni-0/100  02:aa:bb:cc:dd:01  down  down   -       -
+vni-0/101  02:aa:bb:cc:dd:02  down  down   -       -
+vni-0/102  02:aa:bb:cc:dd:03  down  down   -       -
+vni-0/103  02:aa:bb:cc:dd:04  down  down   -       -
+vni-0/2    ac:43:30:f8:f5:84  down  down   -       -
+vni-0/3    ac:43:30:f8:f5:85  down  down   -       -

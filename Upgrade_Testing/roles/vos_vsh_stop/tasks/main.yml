@@ -1,0 +1,32 @@
+---
+# tasks/main.yml
+
+# Stopping Versa Services
+- name: Stopping versa services (stop)
+  shell: bash -lc "vsh stop"
+  register: stop_vsh_output
+  ignore_errors: yes
+
+- name: Check vsh status
+  shell: bash -lc "vsh status"
+  register: vsh_status_output
+  when: stop_vsh_output.rc == 0 and stop_vsh_output.failed == false
+  ignore_errors: yes
+
+- name: Debug msg to check versa-services
+  debug:
+    var: vsh_status_output.stdout_lines
+
+- name: Verify all services are stopped except versa-tpmrm
+  assert:
+    that:
+      - "(vsh_status_output.stdout_lines
+        | select('match', '^((?!versa-tpmrm|versa-tcsd).)* is Running')
+        | list)
+        | length == 0"
+      - "(vsh_status_output.stdout_lines
+        | select('match', '^versa-(tpmrm|tcsd) (is Running|is Stopped)')
+        | list)
+        | length <= 2"
+    fail_msg: "One or more services are still running other than versa-tpmrm or versa-tcsd"
+    success_msg: "All services are confirmed to be stopped, except versa-tpmrm and versa-tcsd ignore status if present."

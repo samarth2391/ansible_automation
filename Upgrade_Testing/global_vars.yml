@@ -1,0 +1,52 @@
+# global_vars.yml
+#candidate_build_src: "versa-flexvnf-20241002-063500-00d1aaf-23.1.1-B.bin"
+
+# [system_paths]
+
+dest_path_vos           : "/home/versa/packages/"
+src_path_candidate      : "/home/versa/git/ansible_automation/Upgrade_Testing/vos_candidate_build/"
+src_path_post_check     : "/home/versa/git/ansible_automation/Upgrade_Testing/var/post_install_check/"
+src_cand_build_path     : "/home/versa/git/ansible_automation/Upgrade_Testing/var/tmp/"
+src_path_21_1_1         : "/home/versa/git/ansible_automation/Upgrade_Testing/vos_release_build/21_1_1/"
+src_path_22_1_1         : "/home/versa/git/ansible_automation/Upgrade_Testing/vos_release_build/22_1_1/"
+src_path_21_2_3         : "/home/versa/git/ansible_automation/Upgrade_Testing/vos_release_build/21_2_3/"
+src_path_22_1_2         : "/home/versa/git/ansible_automation/Upgrade_Testing/vos_release_build/22_1_2/"
+src_path_23_1_1         : "/home/versa/git/ansible_automation/Upgrade_Testing/vos_release_build/23_1_1/"
+
+# [vos_21_1_1]
+
+vos_21_1_1_wsm          : "versa-flexvnf-20200820-165624-6e4e455-21.1.1-wsm.bin"
+vos_21_1_1_snb          : "versa-flexvnf-20200820-165624-6e4e455-21.1.1.bin"
+
+# [vos_21_2_3]
+
+vos_21_2_3_wsm          : "versa-flexvnf-20220730-150211-67ff6c7-21.2.3-wsm.bin"
+vos_21_2_3_snb          : "versa-flexvnf-20220730-150211-67ff6c7-21.2.3.bin"
+
+# [ vos_22_1_1]
+
+vos_22_1_1_wsm          : "versa-flexvnf-20230504-172406-af8a42a-22.1.1-B-wsm.bin"
+vos_22_1_1_snb          : "versa-flexvnf-20230504-172406-af8a42a-22.1.1-B.bin"
+
+# [ vos_22_1_2]
+
+vos_22_1_2_wsm          : "versa-flexvnf-20230730-073810-5ac317d-22.1.2-B-wsm.bin"
+vos_22_1_2_snb          : "versa-flexvnf-20230730-073810-5ac317d-22.1.2-B.bin"
+
+# [ vos_23_1_1]
+
+vos_23_1_1_wsm          : "versa-flexvnf-20250916-063501-19aaf08-23.1.1-J-wsm.bin"
+vos_23_1_1_snb          : "versa-flexvnf-20250916-063501-19aaf08-23.1.1-J.bin"
+
+# [vos_commands]
+
+upgrade_package         : "/bin/bash -x /opt/versa/scripts/initiate-upgrade.sh upgrade package"
+downgrade_package       : "/bin/bash -x /opt/versa/scripts/initiate-upgrade.sh downgrade package"
+
+# [global varibles]
+
+confirm                 : "no-confirm __LEAF"
+
+# [ Logs ]
+
+upgrade_log             : "/home/versa/git/ansible_automation/Upgrade_Testing/logs/upgrade.log"

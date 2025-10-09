@@ -1,0 +1,148 @@
+## This role roll's back to 22.1.1 from current image running on host
+
+---
+# tasks/main.yml
+
+- name: Run vos_package_info to check for system details/CPU/build/ID
+  include_role:
+    name: vos_package_info
+  tags:
+    run_build_info
+    run_wsm_info
+    run_system_id
+    run_debug_info
+
+- name: Identify and set appropriate image/path for DUT (WSM or SNB)
+  set_fact:
+    vos_22_1_1: "{{ vos_22_1_1_wsm if is_wsm else vos_22_1_1_snb }}"
+
+- name: Set source path based for host based on WSM or SNB
+  set_fact:
+    source_path: "{{ src_path_22_1_1 }}{{ is_wsm | ternary('wsm', 'snb') }}/{{ vos_22_1_1 }}"
+
+- name: Debug source path address for following build
+  debug:
+    msg: "Source path for vos_22_1_1 build: {{ source_path }}"
+
+- name: Copying vos_22_1_1 image to DUT
+  copy:
+    src: "{{ source_path }}"
+    dest: "{{ dest_path_vos }}"
+  register: scp_result
+
+- name: Ensure vos_22_1_1 build was copied successfully
+  fail:
+    msg: "Failed to copy vos_22_1_1 build to the destination"
+  when: scp_result.failed
+
+- name: Debug message for copy operation
+  debug:
+    msg: "vos_22_1_1 {{ vos_22_1_1 }} copied successfully to {{ dest_path_vos }}"
+
+- name: Removing extension bin to vos_22_1_1 existing name
+  set_fact:
+    vos_22_1_1_cmp: "{{ vos_22_1_1 | regex_replace('\\.bin$', '') }}"
+
+- name: Compare vos_22_1_1 and system_release IDs and determine action
+  block:
+    - name: Perform upgrade if system_release_id is lower or same as 22.1.1
+      shell: "{{ upgrade_package }} test {{ vos_22_1_1 }} {{ confirm }}"
+      when:
+        - system_id[0] is version('22.1.1', '<=')
+        - system_build[0] != vos_22_1_1_cmp  # Or if build differs but release matches
+      register: upgrade_result
+
+    - name: Perform downgrade if system_release_id is higher than 22.1.1
+      shell: "{{ downgrade_package }} test {{ vos_22_1_1 }} {{ confirm }}"
+      when: system_id[0] is version('22.1.1', '>')
+      register: downgrade_result
+  become: true
+  become_user: root
+  become_method: sudo
+
+- name: No action needed, System is already on the intended release and build
+  local_action:
+    module: lineinfile
+    path: "{{ upgrade_log }}"
+    line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [INFO]: System is already on the intended release and build ({{ system_build[0] }}) for host {{ inventory_hostname }}."
+    create: yes
+    state: present
+  when:
+    - system_id[0] is version('22.1.1', '==')
+    - system_build[0] == vos_22_1_1_cmp
+
+- name: Handle upgrade or downgrade process
+  block:
+    - name: Monitor logs for Upgrade or Downgrade progress
+      shell: |
+        tail -f /var/log/versa/upgrade.log |
+        grep -m 1 -E "Reboot required|No reboot required" && echo "Checkpoint reached"
+      register: checkpoint_monitor
+      async: 1800
+      poll: 1
+      when: upgrade_result is defined or downgrade_result is defined
+      ignore_errors: yes
+
+    - name: System check if reboot is required after upgrade/downgrade process
+      set_fact:
+        reboot_required: "{{ 'Reboot required' in checkpoint_monitor.stdout }}"
+      when: checkpoint_monitor.rc == 0
+
+    - name: Host reboot required flag status
+      debug:
+        var: reboot_required
+
+    - name: Log monitoring failure to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAIL]: Upgrade from build {{ system_build[0] }} to {{ vos_22_1_1 }} on host {{ inventory_hostname }}."
+        create: yes
+        state: present
+      when: checkpoint_monitor is defined and checkpoint_monitor.failed
+
+    - name: Debug message to read checkpoint_monitor status
+      debug:
+        var: checkpoint_monitor.stdout_lines[1]
+
+    - name: Handle upgrade/downgrade log monitoring timeout
+      fail:
+        msg: "Upgrade/Downgrade progress monitoring timed out after 30 minutes."
+      when: checkpoint_monitor.failed
+
+    - name: Sleep for 60 seconds if requires reboot when upgrade/downgrade process completed
+      pause:
+        seconds: 60
+      when: checkpoint_monitor.rc == 0
+
+    - name: Wait for target system to come back online (if rebooted)
+      wait_for_connection:
+        timeout: 1200
+      register: connection_check
+      retries: 240
+      delay: 5
+      until: connection_check is succeeded
+      when: checkpoint_monitor.rc == 0 and reboot_required | bool
+      delegate_to: localhost
+
+    - name: System status after going soft reboot for kernel/udev rule changes
+      debug:
+        msg: "System is back online after soft reboot for kernel/udev rule changes."
+      when: checkpoint_monitor.rc == 0 and reboot_required | bool 
+
+    - name: Sleep for 300 seconds to stabilize Versa services
+      pause:
+        seconds: 300
+
+    - name: Log final decision and success to file on the control node
+      local_action:
+        module: lineinfile
+        path: "{{ upgrade_log }}"
+        line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [INFO]: Upgrade from build {{ system_build[0] }} to {{ vos_22_1_1 }} OK on host {{ inventory_hostname }}."
+        create: yes
+        state: present
+  when: not (system_id[0] is version('22.1.1', '==') and system_build[0] == vos_22_1_1_cmp)
+
+- name: Final decision output
+  debug:
+    msg: "Upgrade process completed for {{ vos_22_1_1 }}"

@@ -1,0 +1,47 @@
+## This role will fetch system manufacturer and model from dmidecode
+## Fetched manufacturer and model will be in lowercase characters
+
+---
+- name: Identify device model by running dmidecode
+  shell: "dmidecode -t 1"
+  register: dmidecode_output
+  become: true
+  become_user: root
+  failed_when: dmidecode_output.rc != 0
+  ignore_errors: true
+
+- name: Print failure message if unable to fetch system manufacturer and model
+  fail:
+    msg: "Unable to fetch system manufacturer and model with dmidecode command."
+  when: dmidecode_output is defined and dmidecode_output.rc != 0
+
+- name: Extract Manufacturer and Product Name from dmidecode output
+  set_fact:
+    manufacturer: "{{
+      dmidecode_output.stdout
+      | regex_search('Manufacturer:\\s*(.+)', '\\1')
+      | first
+      | lower
+    }}"
+    model: "{{
+      dmidecode_output.stdout
+      | regex_search('Product Name:\\s*(.+)', '\\1')
+      | first
+      | lower
+    }}"
+
+- name: Trim manufacturer to only the first word if necessary
+  set_fact:
+    manufacturer: "{{ manufacturer.split(' ')[0] | default('Unknown') | lower }}"
+    # Removes Networks from Versa Networks INC. just keeps Versa
+
+- name: Manufacturer and model names
+  debug:
+    msg:
+      - "Manufacturer: {{ manufacturer }}"
+      - "Model: {{ model }}"
+
+- name: Set post-install check path based on manufacturer and model
+  set_fact:
+    post_install_path: "{{ src_path_post_check }}{{ manufacturer | trim  }}/{{ model | trim }}"
+  when: dmidecode_output.rc == 0

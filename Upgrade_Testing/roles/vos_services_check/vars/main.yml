@@ -1,0 +1,5 @@
+---
+# vars/main.yml
+
+# [ Logs ]
+upgrade_log:             "/home/versa/ansible/logs/upgrade.log"
