@@ -1,4 +1,9 @@
+---
 ## This task will rollback image to 23.1.1 from current image running on host
+
+- name: Load global variables
+  include_vars:
+    file: global_vars.yml
 
 - name: Run vos_package_info to check for system details/CPU/build/ID
   include_role:
@@ -90,12 +95,29 @@
     line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [SUCCESS]: System already on target build {{ vos_23_1_1_cmp }} ({{ system_id[0] }}) on host {{ inventory_hostname }}. No action needed."
     create: yes
     state: present
-  when: already_on_target
+  when: already_on_target and ansible_date_time is defined
+
+- name: Log success when system is already on intended release and build (fallback)
+  local_action:
+    module: shell
+    cmd: "echo '[$(date '+%Y-%m-%d %H:%M:%S')] [SUCCESS]: System already on target build {{ vos_23_1_1_cmp }} ({{ system_id[0] }}) on host {{ inventory_hostname }}. No action needed.' >> {{ upgrade_log }}"
+  when: already_on_target and ansible_date_time is not defined
+  ignore_errors: yes
 
 - name: Display message when already on target version
   debug:
     msg: "System is already on the intended release and build {{ vos_23_1_1_cmp }}. Skipping upgrade/downgrade but will continue with validation."
   when: already_on_target
+
+- name: Set flag indicating device is already on target
+  set_fact:
+    device_already_on_target: true
+  when: already_on_target
+
+- name: Set flag indicating upgrade/downgrade will proceed
+  set_fact:
+    device_already_on_target: false
+  when: not already_on_target
 
 # Only perform upgrade/downgrade if NOT already on target version
 - name: Compare vos_23_1_1 and system_release IDs and determine action
@@ -129,7 +151,14 @@
         line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAILED]: Upgrade from build {{ system_build[0] }} to {{ vos_23_1_1 }} on host {{ inventory_hostname }}."
         create: yes
         state: present
-      when: checkpoint_monitor is defined and checkpoint_monitor.failed
+      when: checkpoint_monitor is defined and checkpoint_monitor.failed and ansible_date_time is defined
+
+    - name: Log monitoring failure to file on the control node (fallback)
+      local_action:
+        module: shell
+        cmd: "echo '[$(date '+%Y-%m-%d %H:%M:%S')] [FAILED]: Upgrade from build {{ system_build[0] }} to {{ vos_23_1_1 }} on host {{ inventory_hostname }}.' >> {{ upgrade_log }}"
+      when: checkpoint_monitor is defined and checkpoint_monitor.failed and ansible_date_time is not defined
+      ignore_errors: yes
 
     - name: Debug message to read checkpoint_monitor status
       debug:
@@ -202,7 +231,14 @@
         line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [SUCCESS]: Upgrade from build {{ system_build[0] }} to {{ vos_23_1_1 }} on host {{ inventory_hostname }}."
         create: yes
         state: present
-      when: upgrade_result is defined or downgrade_result is defined
+      when: (upgrade_result is defined or downgrade_result is defined) and ansible_date_time is defined
+
+    - name: Log final decision and success to file on the control node (fallback)
+      local_action:
+        module: shell
+        cmd: "echo '[$(date '+%Y-%m-%d %H:%M:%S')] [SUCCESS]: Upgrade from build {{ system_build[0] }} to {{ vos_23_1_1 }} on host {{ inventory_hostname }}.' >> {{ upgrade_log }}"
+      when: (upgrade_result is defined or downgrade_result is defined) and ansible_date_time is not defined
+      ignore_errors: yes
 
     - name: Final decision output
       debug:
@@ -229,6 +265,14 @@
         line: "[{{ ansible_date_time.date }} {{ ansible_date_time.time }}] [FAIL]: Rollback failed on host {{ inventory_hostname }}"
         create: yes
         state: present
+      when: ansible_date_time is defined
+
+    - name: Log rollback failure (fallback)
+      local_action:
+        module: shell
+        cmd: "echo '[$(date '+%Y-%m-%d %H:%M:%S')] [FAIL]: Rollback failed on host {{ inventory_hostname }}' >> {{ upgrade_log }}"
+      when: ansible_date_time is not defined
+      ignore_errors: yes
 
 # Set completion status for this host - ALWAYS execute this
 - name: Set rollback completion status

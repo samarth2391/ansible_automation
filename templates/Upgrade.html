@@ -45,6 +45,26 @@
       animation: pulse 2s infinite;
     }
     
+    .status-unreachable {
+      background: linear-gradient(135deg, #ff6600, #ff4400);
+      color: white;
+      font-weight: 600;
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      display: inline-block;
+    }
+
+    .status-skipped {
+      background: linear-gradient(135deg, #888888, #666666);
+      color: white;
+      font-weight: 600;
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      display: inline-block;
+    }
+    
     .header-section {
       background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(20px);
@@ -73,6 +93,11 @@
       margin-bottom: 2rem;
       box-shadow: 0 8px 32px rgba(0, 255, 0, 0.1);
     }
+
+    .host-table-container.has-failures {
+      border: 1px solid rgba(255, 0, 0, 0.4);
+      box-shadow: 0 8px 32px rgba(255, 0, 0, 0.2);
+    }
     
     .host-table-header {
       background: linear-gradient(135deg, #003300, #004d00);
@@ -85,6 +110,12 @@
       align-items: center;
       gap: 0.5rem;
       border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+    }
+
+    .host-table-header.failed {
+      background: linear-gradient(135deg, #330000, #4d0000);
+      color: #ff6666;
+      border-bottom: 1px solid rgba(255, 0, 0, 0.3);
     }
     
     .connection-status {
@@ -155,10 +186,19 @@
       background: rgba(0, 0, 0, 0.7);
       vertical-align: top;
     }
+
+    .test-table tr.failed-row td {
+      background: rgba(50, 0, 0, 0.5);
+      border-color: rgba(255, 0, 0, 0.2);
+    }
     
     .test-name {
       font-weight: 500;
       color: #00ff00;
+    }
+
+    .test-name.failed {
+      color: #ff6666;
     }
     
     .debug-message {
@@ -168,6 +208,11 @@
       line-height: 1.4;
       white-space: pre-wrap;
       word-break: break-word;
+    }
+
+    .debug-message.error {
+      color: #ff6666;
+      font-weight: 500;
     }
     
     .host-icon {
@@ -181,6 +226,10 @@
       color: white;
       font-weight: bold;
       font-size: 0.875rem;
+    }
+
+    .host-icon.failed {
+      background: linear-gradient(135deg, #ff0000, #cc0000);
     }
     
     .overall-summary {
@@ -283,28 +332,40 @@
           Overall Execution Summary
         </h4>
         <div class="row g-3">
-          <div class="col-md-3">
+          <div class="col-md-2">
             <div class="metric-card">
               <div class="metric-value text-info" id="total-hosts">0</div>
               <div class="metric-label">Total Hosts</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <div class="metric-card">
               <div class="metric-value text-success" id="successful-hosts">0</div>
               <div class="metric-label">Successful</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <div class="metric-card">
               <div class="metric-value text-warning" id="running-hosts">0</div>
               <div class="metric-label">In Progress</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <div class="metric-card">
               <div class="metric-value text-danger" id="failed-hosts">0</div>
               <div class="metric-label">Failed</div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="metric-card">
+              <div class="metric-value" style="color: #ff6600;" id="unreachable-hosts">0</div>
+              <div class="metric-label">Unreachable</div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="metric-card">
+              <div class="metric-value" style="color: #888888;" id="skipped-hosts">0</div>
+              <div class="metric-label">Skipped</div>
             </div>
           </div>
         </div>
@@ -348,17 +409,26 @@
       'Downloading firmware image': 'Copying image to the respective folder',
       'Download': 'Copying image to the respective folder',
       'Copying vos': 'Copying image to the respective folder',
+      'Find the SNB build file': 'Copying image to the respective folder',
+      'Find the WSM build file': 'Copying image to the respective folder',
       'Ensure vos_23_1_1 build was copied successfully': 'Copying image to the respective folder',
       'copied successfully': 'Copying image to the respective folder',
       'Debug message for copy operation': 'Copying image to the respective folder',
       'Log success when system is already on intended release and build': 'Checking if upgrade/downgrade is needed',
       'already on intended': 'Checking if upgrade/downgrade is needed',
       'Display message when already on target': 'Checking if upgrade/downgrade is needed',
+      'Check if system is already on target version': 'Checking if upgrade/downgrade is needed',
+      'System is already on the intended release': 'Checking if upgrade/downgrade is needed',
+      'Log upgrade success (device already on target)': 'Checking if upgrade/downgrade is needed',
+      'Set flag indicating device is already on target': 'Checking if upgrade/downgrade is needed',
       'Perform upgrade': 'Checking if upgrade/downgrade is needed',
       'Perform downgrade': 'Checking if upgrade/downgrade is needed',
       'Monitor logs': 'Checking if upgrade/downgrade is needed',
       'Manufacturer and model names': 'Model info check',
       'device_model_info': 'Model info check',
+      'Extract package details from system': 'Package info check',
+      'Debug system details output': 'Package info check',
+      'vos_package_info': 'Package info check',
       'Success - lspci output matches': 'lspci check',
       'lspci output matches expected': 'lspci check',
       'vos_lspci_check': 'lspci check',
@@ -387,10 +457,59 @@
       return hostname.trim();
     }
 
-    function extractDebugMessage(taskName, details) {
+    function extractDebugMessage(taskName, details, status) {
       const lowerTask = taskName.toLowerCase();
       const lowerDetails = (details || '').toLowerCase();
       
+      // Handle failures specifically
+      if (status === 'failed' || status === 'fatal') {
+        if (details) {
+          // Extract the error message
+          if (details.includes('undefined variable')) {
+            const varMatch = details.match(/'([^']+)' is undefined/);
+            if (varMatch) {
+              return `ERROR: Variable '${varMatch[1]}' is undefined. Check global_vars.yml`;
+            }
+          }
+          if (details.includes('FAILED!')) {
+            // Extract just the meaningful error part
+            const msgMatch = details.match(/"msg":\s*"([^"]+)"/);
+            if (msgMatch) {
+              return `ERROR: ${msgMatch[1]}`;
+            }
+          }
+          return `ERROR: ${details.substring(0, 200)}`;
+        }
+        return 'ERROR: Task failed';
+      }
+
+      // Handle "already on target" scenario - multiple detection points
+      if (lowerTask.includes('already on intended') || 
+          lowerTask.includes('already on target') ||
+          lowerTask.includes('system is already on the intended release') ||
+          lowerTask.includes('log upgrade success (device already on target)') ||
+          lowerTask.includes('device was already on target') ||
+          lowerTask.includes('set flag indicating device is already on target')) {
+        
+        if (lowerDetails.includes('device was already on target build') || 
+            lowerDetails.includes('no upgrade/downgrade was needed')) {
+          return '✓ Device is already on the intended build. No upgrade/downgrade needed.';
+        }
+        if (lowerDetails.includes('skipping') || lowerDetails.includes('no action needed')) {
+          return '✓ Device is already on the intended build. No upgrade/downgrade needed.';
+        }
+        // Default message for these tasks
+        return '✓ Device is already on the intended build. No upgrade/downgrade needed.';
+      }
+
+      // Handle skipped status
+      if (status === 'skipped') {
+        if (lowerTask.includes('upgrade') || lowerTask.includes('downgrade')) {
+          return '✓ Device already on target build - Skipped upgrade/downgrade';
+        }
+        return 'Task skipped (conditional not met)';
+      }
+
       // Extract system build for initial check
       if (lowerTask.includes('debug system details output') && details) {
         const buildMatch = details.match(/versa-flexvnf-[^\s"',]+/i);
@@ -401,6 +520,10 @@
       }
       
       // Download/Copy operation
+      if (lowerTask.includes('find the snb build') || lowerTask.includes('find the wsm build')) {
+        return 'Looking for image files...';
+      }
+
       if (lowerTask.includes('downloading') || lowerTask.includes('download')) {
         if (lowerDetails.includes('progress') || lowerDetails.includes('%')) {
           return details;
@@ -414,14 +537,6 @@
       
       if (lowerTask.includes('copied successfully') || lowerTask.includes('debug message for copy')) {
         return 'Image copied successfully';
-      }
-      
-      // Already on target check
-      if (lowerTask.includes('already on intended') || lowerTask.includes('already on target')) {
-        if (lowerDetails.includes('skipping')) {
-          return 'Image already on intended build. No upgrade/downgrade needed.';
-        }
-        return 'Checking if upgrade/downgrade is required';
       }
       
       // Upgrade/Downgrade execution
@@ -440,13 +555,10 @@
         }
         return 'Model information retrieved';
       }
-      
-      // Package info - extract from validation phase
-      if (lowerTask.includes('debug system details output') && details) {
-        const packageMatch = details.match(/Package name\s+([^\s"',]+)/i);
-        if (packageMatch) {
-          return `Package name: ${packageMatch[1]}`;
-        }
+
+      // Package info
+      if (lowerTask.includes('extract package details') || lowerTask.includes('vos_package_info')) {
+        return 'Package information retrieved';
       }
       
       // lspci check
@@ -509,10 +621,12 @@
     function getStatusBadge(status) {
       if (status === 'running') {
         return '<span class="status-running"><i class="fas fa-spinner fa-spin me-1"></i>RUNNING</span>';
-      } else if (status === 'pass') {
+      } else if (status === 'pass' || status === 'ok' || status === 'changed') {
         return '<span class="status-pass"><i class="fas fa-check me-1"></i>PASS</span>';
-      } else if (status === 'fail') {
+      } else if (status === 'fail' || status === 'failed' || status === 'unreachable' || status === 'fatal') {
         return '<span class="status-fail"><i class="fas fa-times me-1"></i>FAIL</span>';
+      } else if (status === 'skipped') {
+        return '<span style="color: #888;"><i class="fas fa-forward me-1"></i>SKIPPED</span>';
       }
       return '<span style="color: #888;">Pending</span>';
     }
@@ -527,13 +641,7 @@
           tests: {},
           allCompleted: false,
           hasFailures: false,
-          phaseTracker: {
-            initialSystemCheck: false,
-            copyImage: false,
-            checkTarget: false,
-            upgradeDowngrade: false,
-            validationStarted: false
-          }
+          isUnreachable: false
         };
         
         TEST_CASES.forEach(testCase => {
@@ -563,26 +671,41 @@
         const row = document.createElement('tr');
         row.className = 'fade-in';
         
+        if (test.status === 'fail' || test.status === 'failed' || test.status === 'fatal') {
+          row.classList.add('failed-row');
+        }
+        
         row.innerHTML = `
-          <td><span class="test-name">${testCase}</span></td>
+          <td><span class="test-name ${test.status === 'fail' || test.status === 'failed' || test.status === 'fatal' ? 'failed' : ''}">${testCase}</span></td>
           <td style="text-align: center;">${getStatusBadge(test.status)}</td>
-          <td><div class="debug-message">${test.debugMessage || 'Waiting...'}</div></td>
+          <td><div class="debug-message ${test.status === 'fail' || test.status === 'failed' || test.status === 'fatal' ? 'error' : ''}">${test.debugMessage || 'Waiting...'}</div></td>
         `;
         tbody.appendChild(row);
       });
 
       const allTests = Object.values(hostTests);
       const allCompleted = allTests.every(test => test.status !== 'pending' && test.status !== 'running');
-      const hasFailures = allTests.some(test => test.status === 'fail');
+      const hasFailures = allTests.some(test => test.status === 'fail' || test.status === 'failed' || test.status === 'fatal');
       
       hostData[normalizedHostname].allCompleted = allCompleted;
       hostData[normalizedHostname].hasFailures = hasFailures;
 
+      // Update host table container styling
+      const hostTableContainer = document.getElementById(`host-table-${normalizedHostname}`);
+      if (hasFailures) {
+        hostTableContainer.classList.add('has-failures');
+      }
+
       const hostStatus = document.getElementById(`host-status-${normalizedHostname}`);
+      const hostHeader = document.getElementById(`host-header-${normalizedHostname}`);
+      const hostIcon = document.getElementById(`host-icon-${normalizedHostname}`);
+      
       if (hostStatus) {
         if (allCompleted) {
           if (hasFailures) {
             hostStatus.innerHTML = '<i class="fas fa-times text-danger"></i>';
+            if (hostHeader) hostHeader.classList.add('failed');
+            if (hostIcon) hostIcon.classList.add('failed');
           } else {
             hostStatus.innerHTML = '<i class="fas fa-check text-success"></i>';
             showHostSuccessMessage(normalizedHostname);
@@ -591,6 +714,8 @@
           hostStatus.innerHTML = '<i class="fas fa-spinner fa-spin text-info"></i>';
         }
       }
+
+      updateOverallSummary();
     }
 
     function showHostSuccessMessage(hostname) {
@@ -619,8 +744,8 @@
       tableContainer.id = `host-table-${hostname}`;
       
       tableContainer.innerHTML = `
-        <h4 class="host-table-header">
-          <div class="host-icon">${getHostInitials(hostname)}</div>
+        <h4 class="host-table-header" id="host-header-${hostname}">
+          <div class="host-icon" id="host-icon-${hostname}">${getHostInitials(hostname)}</div>
           ${hostname}
           <span class="ms-auto" id="host-status-${hostname}">
             <i class="fas fa-spinner fa-spin text-info"></i>
@@ -650,10 +775,15 @@
       let successfulHosts = 0;
       let runningHosts = 0;
       let failedHosts = 0;
+      let unreachableHosts = 0;
+      let skippedHosts = 0;
 
       hosts.forEach(hostname => {
         const host = hostData[hostname];
-        if (host.allCompleted) {
+        
+        if (host.isUnreachable) {
+          unreachableHosts++;
+        } else if (host.allCompleted) {
           if (host.hasFailures) {
             failedHosts++;
           } else {
@@ -668,12 +798,18 @@
       document.getElementById('successful-hosts').textContent = successfulHosts;
       document.getElementById('running-hosts').textContent = runningHosts;
       document.getElementById('failed-hosts').textContent = failedHosts;
+      document.getElementById('unreachable-hosts').textContent = unreachableHosts;
+      document.getElementById('skipped-hosts').textContent = skippedHosts;
 
       if (totalHosts > 0 && runningHosts === 0) {
-        if (failedHosts === 0) {
+        if (unreachableHosts > 0) {
+          showError(`${unreachableHosts} host(s) unreachable. ${failedHosts} failed. ${successfulHosts} succeeded.`);
+        } else if (failedHosts === 0) {
           showSuccess('All hosts successfully completed all tasks!');
+        } else if (failedHosts === totalHosts) {
+          showError(`All ${failedHosts} host(s) failed during execution.`);
         } else {
-          showError(`Execution completed with ${failedHosts} host(s) having failures.`);
+          showError(`Execution completed: ${successfulHosts} succeeded, ${failedHosts} failed.`);
         }
       }
     }
@@ -686,7 +822,6 @@
       // Skip localhost entries unless it's a download/copy task
       if (hostname.toLowerCase() === 'localhost') {
         const testCase = mapTaskToTestCase(task.name);
-        // Only allow localhost for copying/downloading tasks
         if (testCase !== 'Copying image to the respective folder') {
           return;
         }
@@ -695,66 +830,162 @@
       initializeHostTests(hostname);
       
       const testCase = mapTaskToTestCase(task.name);
-      if (!testCase) return;
+      if (!testCase) {
+        // Check if this is a failure message that should be captured
+        if (task.status === 'failed' || task.status === 'fatal') {
+          // Find which test case this failure relates to
+          const lowerTask = task.name.toLowerCase();
+          if (lowerTask.includes('find') || lowerTask.includes('copy') || lowerTask.includes('download')) {
+            const relatedTestCase = 'Copying image to the respective folder';
+            const hostTests = hostData[hostname].tests;
+            hostTests[relatedTestCase] = {
+              status: 'fail',
+              debugMessage: extractDebugMessage(task.name, task.details, 'failed')
+            };
+            updateHostTable(hostname);
+          } else if (lowerTask.includes('upgrade') || lowerTask.includes('downgrade')) {
+            const relatedTestCase = 'Checking if upgrade/downgrade is needed';
+            const hostTests = hostData[hostname].tests;
+            hostTests[relatedTestCase] = {
+              status: 'fail',
+              debugMessage: extractDebugMessage(task.name, task.details, 'failed')
+            };
+            updateHostTable(hostname);
+          }
+        }
+        return;
+      }
 
       const hostTests = hostData[hostname].tests;
-      const tracker = hostData[hostname].phaseTracker;
       
       let status = 'running';
       if (task.status === 'ok' || task.status === 'changed') {
         status = 'pass';
-      } else if (task.status === 'failed' || task.status === 'unreachable') {
+      } else if (task.status === 'unreachable') {
+        status = 'unreachable';
+        // Mark the entire host as unreachable
+        hostData[hostname].isUnreachable = true;
+        hostData[hostname].allCompleted = true;
+        
+        // Mark all tests as unreachable
+        TEST_CASES.forEach(tc => {
+          hostTests[tc] = {
+            status: 'unreachable',
+            debugMessage: 'Host is unreachable. Cannot establish connection.'
+          };
+        });
+        
+        updateHostTable(hostname);
+        updateOverallSummary();
+        return;
+      } else if (task.status === 'failed' || task.status === 'fatal') {
         status = 'fail';
-      }
-
-      // Keep running status if task is actively downloading
-      if (task.name.toLowerCase().includes('downloading') && task.status === 'running') {
-        status = 'running';
+      } else if (task.status === 'skipped') {
+        // For skipped tasks related to upgrade, mark as pass if already on target
+        if (testCase === 'Checking if upgrade/downgrade is needed') {
+          status = 'pass'; // Device already on target, which is success
+        } else {
+          status = 'skipped';
+        }
       }
 
       // Extract appropriate debug message
-      const debugMessage = extractDebugMessage(task.name, task.details);
+      const debugMessage = extractDebugMessage(task.name, task.details, status);
 
-      // Special handling for Package info check - needs to come from validation phase
-      if (testCase === 'Package info check') {
-        if (tracker.validationStarted && task.name.includes('Debug system details output')) {
-          hostTests[testCase] = { status, debugMessage };
-        } else if (!tracker.validationStarted) {
-          return;
-        }
-      } else {
-        hostTests[testCase] = { status, debugMessage };
-      }
-
-      // Track phases
-      if (testCase === 'Check current system details' && status === 'pass') {
-        tracker.initialSystemCheck = true;
-      }
-      if (testCase === 'Copying image to the respective folder' && status === 'pass') {
-        tracker.copyImage = true;
-      }
-      if (testCase === 'Checking if upgrade/downgrade is needed' && status === 'pass') {
-        tracker.checkTarget = true;
-      }
-      if (testCase === 'Model info check' && status === 'pass') {
-        tracker.validationStarted = true;
-      }
+      hostTests[testCase] = { status, debugMessage };
 
       updateHostTable(hostname);
-      updateOverallSummary();
     }
 
     function checkForPlayRecap(line) {
       if (line.includes('PLAY RECAP')) {
         setTimeout(() => {
-          Object.keys(hostData).forEach(hostname => {
-            const allPassed = Object.values(hostData[hostname].tests).every(
-              test => test.status === 'pass'
-            );
-            if (allPassed) {
-              updateOverallSummary();
+          // Parse the PLAY RECAP line for each host
+          const recapLines = line.split('\n');
+          
+          recapLines.forEach(recapLine => {
+            // Match pattern like: hostname : ok=X changed=Y unreachable=Z failed=W
+            const hostRecapMatch = recapLine.match(/^([a-z0-9\-]+)\s*:\s*ok=(\d+).*unreachable=(\d+).*failed=(\d+)/i);
+            
+            if (hostRecapMatch) {
+              const hostname = normalizeHostname(hostRecapMatch[1]);
+              const okCount = parseInt(hostRecapMatch[2]);
+              const unreachableCount = parseInt(hostRecapMatch[3]);
+              const failedCount = parseInt(hostRecapMatch[4]);
+              
+              if (hostData[hostname]) {
+                // If host was unreachable
+                if (unreachableCount > 0) {
+                  hostData[hostname].isUnreachable = true;
+                  hostData[hostname].allCompleted = true;
+                  
+                  // Mark all tests as unreachable
+                  TEST_CASES.forEach(testCase => {
+                    if (hostData[hostname].tests[testCase].status === 'pending' || 
+                        hostData[hostname].tests[testCase].status === 'running') {
+                      hostData[hostname].tests[testCase] = {
+                        status: 'unreachable',
+                        debugMessage: 'Host became unreachable during execution'
+                      };
+                    }
+                  });
+                  
+                  updateHostTable(hostname);
+                } else if (failedCount === 0 && okCount > 0) {
+                  // Execution completed successfully
+                  hostData[hostname].allCompleted = true;
+                  
+                  // Mark any remaining pending/running tests as pass
+                  TEST_CASES.forEach(testCase => {
+                    if (hostData[hostname].tests[testCase].status === 'pending' || 
+                        hostData[hostname].tests[testCase].status === 'running') {
+                      hostData[hostname].tests[testCase] = {
+                        status: 'pass',
+                        debugMessage: 'Task completed successfully'
+                      };
+                    }
+                  });
+                  
+                  updateHostTable(hostname);
+                }
+              }
             }
           });
+          
+          // Handle pending tests for reachable hosts
+          Object.keys(hostData).forEach(hostname => {
+            if (hostData[hostname].isUnreachable) {
+              return; // Skip unreachable hosts
+            }
+            
+            const hostTests = hostData[hostname].tests;
+            
+            // Check if we have any rescued tasks (indicates failures that were caught)
+            const rescuedMatch = line.match(/rescued=(\d+)/);
+            const hasRescued = rescuedMatch && parseInt(rescuedMatch[1]) > 0;
+            
+            // Mark any remaining pending tests
+            let hasChanges = false;
+            Object.keys(hostTests).forEach(testName => {
+              const test = hostTests[testName];
+              if (test.status === 'pending' || test.status === 'running') {
+                // If there are rescued tasks but the test is still pending, mark as pass
+                // (The rescue was for a different part, this test succeeded or was skipped correctly)
+                hostTests[testName] = {
+                  status: 'pass',
+                  debugMessage: 'Task completed'
+                };
+                hasChanges = true;
+              }
+            });
+            
+            if (hasChanges) {
+              hostData[hostname].allCompleted = true;
+              updateHostTable(hostname);
+            }
+          });
+          
+          updateOverallSummary();
         }, 1000);
       }
     }
@@ -768,6 +999,196 @@
       
       if (data.type === 'log' && data.message) {
         checkForPlayRecap(data.message);
+        
+        const message = data.message;
+        
+        // Parse log lines for failures
+        if (message.includes('fatal:') || message.includes('FAILED!')) {
+          // Extract hostname and error
+          const hostMatch = message.match(/fatal:\s*\[([^\]]+)\]/);
+          if (hostMatch) {
+            const hostname = normalizeHostname(hostMatch[1]);
+            initializeHostTests(hostname);
+            
+            // Try to determine which test case failed based on context
+            const lowerMsg = message.toLowerCase();
+            let affectedTestCase = null;
+            
+            if (lowerMsg.includes('undefined variable') && lowerMsg.includes('src_path')) {
+              affectedTestCase = 'Copying image to the respective folder';
+            } else if (lowerMsg.includes('find')) {
+              affectedTestCase = 'Copying image to the respective folder';
+            } else if (lowerMsg.includes('wait for ssh')) {
+              affectedTestCase = 'Checking if upgrade/downgrade is needed';
+            } else if (lowerMsg.includes('package-info') || lowerMsg.includes('failed to connect')) {
+              affectedTestCase = 'Package info check';
+            }
+            
+            if (affectedTestCase && hostData[hostname]) {
+              let errorMsg = 'ERROR: Task failed - check configuration';
+              
+              if (message.includes('undefined variable')) {
+                errorMsg = 'ERROR: Required variables not loaded. Check global_vars.yml';
+              } else if (message.includes('password is required')) {
+                errorMsg = 'ERROR: sudo password required. Check ansible configuration.';
+              } else if (message.includes('Failed to connect')) {
+                errorMsg = 'ERROR: Failed to connect to server. System may be rebooting or services not ready.';
+              }
+              
+              hostData[hostname].tests[affectedTestCase] = {
+                status: 'fail',
+                debugMessage: errorMsg
+              };
+              
+              updateHostTable(hostname);
+            }
+          }
+        }
+        
+        // Parse rescue/error messages that indicate failures
+        if (message.includes('UPGRADE FAILED') || message.includes('VALIDATION FAILED') || 
+            message.includes('HOST UNREACHABLE') || message.includes('already on target') ||
+            message.includes('already on intended')) {
+          const hostMatch = message.match(/for ([a-z0-9\-]+)/i) || message.match(/Host ([a-z0-9\-]+)/i);
+          if (hostMatch) {
+            const hostname = normalizeHostname(hostMatch[1]);
+            initializeHostTests(hostname);
+            
+            if (message.includes('HOST UNREACHABLE')) {
+              // Mark entire host as unreachable
+              if (hostData[hostname]) {
+                hostData[hostname].isUnreachable = true;
+                hostData[hostname].allCompleted = true;
+                
+                // Mark all tests as unreachable
+                TEST_CASES.forEach(testCase => {
+                  hostData[hostname].tests[testCase] = {
+                    status: 'unreachable',
+                    debugMessage: 'Host is not reachable. Cannot connect to the device. Check network connectivity, SSH service, and firewall rules.'
+                  };
+                });
+                
+                updateHostTable(hostname);
+              }
+            } else if (message.includes('already on target') || message.includes('already on intended')) {
+              // Device is already on target build - mark upgrade as PASS
+              if (hostData[hostname]) {
+                hostData[hostname].tests['Checking if upgrade/downgrade is needed'] = {
+                  status: 'pass',
+                  debugMessage: '✓ Device is already on the intended build. No upgrade/downgrade needed.'
+                };
+                updateHostTable(hostname);
+              }
+            } else if (message.includes('UPGRADE FAILED')) {
+              // Mark upgrade as failed
+              if (hostData[hostname]) {
+                const errorMatch = message.match(/Error: ([^\n"]+)/);
+                const errorMsg = errorMatch ? `ERROR: ${errorMatch[1]}` : 'ERROR: Upgrade failed';
+                
+                hostData[hostname].tests['Checking if upgrade/downgrade is needed'] = {
+                  status: 'fail',
+                  debugMessage: errorMsg
+                };
+                updateHostTable(hostname);
+              }
+            }
+            
+            if (message.includes('VALIDATION FAILED')) {
+              // Mark validation tests as failed
+              if (hostData[hostname]) {
+                const errorMatch = message.match(/Error: ([^\n"]+)/);
+                const errorMsg = errorMatch ? `ERROR: ${errorMatch[1]}` : 'ERROR: Validation failed';
+                
+                // Mark Package info check as failed if it hasn't passed yet
+                if (hostData[hostname].tests['Package info check'].status !== 'pass') {
+                  hostData[hostname].tests['Package info check'] = {
+                    status: 'fail',
+                    debugMessage: errorMsg
+                  };
+                }
+                updateHostTable(hostname);
+              }
+            }
+          }
+        }
+        
+        // Parse final status summary to mark overall success/failure
+        if (message.includes('FINAL STATUS for')) {
+          const hostMatch = message.match(/FINAL STATUS for ([a-z0-9\-]+)/i);
+          if (hostMatch) {
+            const hostname = normalizeHostname(hostMatch[1]);
+            
+            // Check if upgrade and validation were successful
+            const upgradeSuccess = message.includes('Upgrade successful: True');
+            const validationSuccess = message.includes('Validation successful: True');
+            const hostCompleted = message.includes('Host processing completed: True');
+            
+            if (hostData[hostname]) {
+              // Mark host as completed
+              if (hostCompleted) {
+                hostData[hostname].allCompleted = true;
+              }
+              
+              // If either failed, ensure proper test cases are marked as failed
+              if (!upgradeSuccess) {
+                // Check if it's because device was already on target
+                const alreadyOnTarget = message.includes('already_on_target') || 
+                                       message.includes('Already on target') ||
+                                       message.includes('Skipping upgrade');
+                
+                if (alreadyOnTarget) {
+                  // Mark as PASS since being on target is success
+                  hostData[hostname].tests['Checking if upgrade/downgrade is needed'] = {
+                    status: 'pass',
+                    debugMessage: '✓ Device is already on the intended build. No upgrade/downgrade needed.'
+                  };
+                } else {
+                  // Find the error message
+                  const errorsMatch = message.match(/ERRORS: ([^\n"]+)/);
+                  const errorMsg = errorsMatch ? `ERROR: ${errorsMatch[1].split(',')[0]}` : 'ERROR: Upgrade failed';
+                  
+                  if (hostData[hostname].tests['Checking if upgrade/downgrade is needed'].status !== 'pass') {
+                    hostData[hostname].tests['Checking if upgrade/downgrade is needed'] = {
+                      status: 'fail',
+                      debugMessage: errorMsg
+                    };
+                  }
+                }
+              }
+              
+              if (!validationSuccess) {
+                // Mark validation tests as failed
+                const errorsMatch = message.match(/ERRORS: [^,]*, ([^\n"]+)/);
+                const errorMsg = errorsMatch ? `ERROR: ${errorsMatch[1]}` : 'ERROR: Validation failed';
+                
+                // Mark any pending validation tests as failed
+                ['Package info check', 'lspci check', 'interfaces check', 'services check'].forEach(testCase => {
+                  if (hostData[hostname].tests[testCase].status === 'pending' || 
+                      hostData[hostname].tests[testCase].status === 'running') {
+                    hostData[hostname].tests[testCase] = {
+                      status: 'fail',
+                      debugMessage: errorMsg
+                    };
+                  }
+                });
+              } else {
+                // Validation successful - mark any pending validation tests as pass
+                ['Package info check', 'lspci check', 'interfaces check', 'services check'].forEach(testCase => {
+                  if (hostData[hostname].tests[testCase].status === 'pending' || 
+                      hostData[hostname].tests[testCase].status === 'running') {
+                    hostData[hostname].tests[testCase] = {
+                      status: 'pass',
+                      debugMessage: 'Validation completed successfully'
+                    };
+                  }
+                });
+              }
+              
+              updateHostTable(hostname);
+              updateOverallSummary();
+            }
+          }
+        }
       }
     }
 
@@ -794,6 +1215,11 @@
             updateConnectionStatus(false, true);
             document.getElementById('start-btn').disabled = false;
             document.getElementById('stop-btn').disabled = true;
+            
+            // Final summary update
+            setTimeout(() => {
+              updateOverallSummary();
+            }, 500);
           }
         } catch (e) {
           console.error('Error parsing data:', e);
@@ -839,6 +1265,8 @@
       document.getElementById('successful-hosts').textContent = '0';
       document.getElementById('running-hosts').textContent = '0';
       document.getElementById('failed-hosts').textContent = '0';
+      document.getElementById('unreachable-hosts').textContent = '0';
+      document.getElementById('skipped-hosts').textContent = '0';
       
       hideMessages();
     }

@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 20px auto;
             background: #000000;
             border-radius: 2px;
@@ -48,11 +48,6 @@
             justify-content: center;
             padding: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .logo-container svg {
-            width: 100%;
-            height: 100%;
         }
 
         .header-text {
@@ -89,77 +84,68 @@
             letter-spacing: 0.5px;
         }
 
-        .selection-section {
-            margin-bottom: 40px;
-        }
-
-        .selection-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #ffffff;
-            font-size: 0.95em;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
         .required {
             color: #e74c3c;
             margin-left: 3px;
         }
 
-        select {
-            padding: 14px 16px;
-            border: 2px solid #87CEEB;
-            border-radius: 4px;
-            font-size: 1em;
-            background: #1a1a1a;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            color: #ffffff;
-        }
-
-        select:hover {
-            border-color: #90EE90;
-            background: #252525;
-        }
-
-        select:focus {
-            outline: none;
-            border-color: #90EE90;
-            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.15);
-            background: #252525;
-        }
-
-        select:disabled {
-            background: #0d0d0d;
-            cursor: not-allowed;
-            color: #666666;
-            border-color: #333333;
-        }
-
-        select option {
-            background: #1a1a1a;
-            color: #ffffff;
-        }
-
-        .action-section {
+        .vendor-section {
             margin-bottom: 40px;
         }
 
-        .subsection-title {
+        .vendor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .vendor-card {
+            background: rgba(135, 206, 235, 0.1);
+            border: 2px solid #87CEEB;
+            border-radius: 4px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .vendor-card:hover {
+            background: rgba(135, 206, 235, 0.2);
+            border-color: #90EE90;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
+        }
+
+        .vendor-card.selected {
+            background: rgba(135, 206, 235, 0.3);
+            border-color: #90EE90;
+            box-shadow: 0 2px 8px rgba(144, 238, 144, 0.4);
+        }
+
+        .vendor-card input[type="checkbox"] {
+            display: none;
+        }
+
+        .vendor-name {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .models-section {
+            margin-top: 30px;
+        }
+
+        .vendor-models-container {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(135, 206, 235, 0.05);
+            border-radius: 4px;
+            border: 2px solid rgba(135, 206, 235, 0.3);
+        }
+
+        .vendor-models-title {
             color: #90EE90;
             font-size: 1em;
             font-weight: 600;
@@ -168,117 +154,172 @@
             letter-spacing: 0.3px;
         }
 
-        .dut-section {
-            margin-top: 30px;
-            padding: 25px;
-            background: rgba(135, 206, 235, 0.05);
-            border-radius: 4px;
-            border: 2px solid rgba(135, 206, 235, 0.3);
-        }
-
-        .dut-radio-group {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-
-        .dut-radio-item {
-            display: flex;
-            align-items: center;
+        .model-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 10px;
         }
 
-        .dut-radio-item input[type="radio"] {
+        .model-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .model-checkbox-item:hover {
+            background: rgba(135, 206, 235, 0.15);
+            border-color: #87CEEB;
+        }
+
+        .model-checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #90EE90;
+            margin-right: 10px;
+        }
+
+        .model-checkbox-item label {
+            cursor: pointer;
+            color: #ffffff;
+            font-size: 0.9em;
+            font-weight: 500;
+            flex: 1;
+            margin: 0;
+        }
+
+        .dut-configuration-section {
+            margin-top: 40px;
+        }
+
+        .dut-table-container {
+            overflow-x: auto;
+            background: rgba(135, 206, 235, 0.05);
+            border-radius: 4px;
+            border: 2px solid rgba(135, 206, 235, 0.3);
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(135, 206, 235, 0.2);
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            color: #87CEEB;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #87CEEB;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(135, 206, 235, 0.2);
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: rgba(135, 206, 235, 0.1);
+        }
+
+        td {
+            padding: 15px;
+            color: #ffffff;
+            font-size: 0.95em;
+        }
+
+        .vendor-cell {
+            color: #87CEEB;
+            font-weight: 600;
+        }
+
+        .model-cell {
+            color: #90EE90;
+            font-weight: 500;
+        }
+
+        .dut-type-cell {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .dut-type-cell input[type="radio"] {
             width: 18px;
             height: 18px;
             cursor: pointer;
             accent-color: #87CEEB;
         }
 
-        .dut-radio-item label {
-            margin: 0;
+        .dut-type-cell label {
             cursor: pointer;
-            font-weight: 500;
-            font-size: 1em;
-            text-transform: none;
-            letter-spacing: 0;
-            color: #ffffff;
+            font-size: 0.9em;
+            margin: 0;
         }
 
-        .custom-dut-input {
-            margin-top: 20px;
-        }
-
-        .custom-dut-input input[type="text"] {
+        .dut-details-cell input[type="text"] {
             width: 100%;
-            max-width: 400px;
-            padding: 14px 16px;
+            padding: 10px;
             border: 2px solid #87CEEB;
             border-radius: 4px;
-            font-size: 1em;
+            font-size: 0.9em;
             background: #1a1a1a;
             color: #ffffff;
             font-family: 'Arial', 'Helvetica', sans-serif;
             transition: all 0.2s;
         }
 
-        .custom-dut-input input[type="text"]:focus {
+        .dut-details-cell input[type="text"]:focus {
             outline: none;
             border-color: #90EE90;
             box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.15);
             background: #252525;
         }
 
-        .custom-dut-input input[type="text"].invalid {
-            border-color: #e74c3c;
+        .dut-details-cell input[type="text"]:disabled {
+            background: #0d0d0d;
+            border-color: #333333;
+            color: #666666;
+            cursor: not-allowed;
         }
 
-        .custom-dut-input input[type="text"].valid {
+        .dut-details-cell input[type="text"].valid {
             border-color: #90EE90;
         }
 
-        .validation-message {
-            display: block;
-            margin-top: 8px;
-            font-size: 0.9em;
-            min-height: 20px;
-        }
-
-        .validation-message.error {
-            color: #e74c3c;
-        }
-
-        .validation-message.success {
-            color: #90EE90;
+        .dut-details-cell input[type="text"].invalid {
+            border-color: #e74c3c;
         }
 
         .default-dut-display {
-            margin-top: 20px;
-        }
-
-        .info-box {
-            padding: 16px 20px;
-            border-radius: 4px;
-            font-size: 0.95em;
-            line-height: 1.6;
-        }
-
-        .info-box.success {
-            background: rgba(144, 238, 144, 0.1);
-            border: 2px solid #90EE90;
             color: #90EE90;
+            font-weight: 500;
+            padding: 10px;
+            background: rgba(144, 238, 144, 0.1);
+            border-radius: 4px;
+            border: 1px solid rgba(144, 238, 144, 0.3);
         }
 
-        .info-box.warning {
-            background: rgba(231, 76, 60, 0.1);
-            border: 2px solid #e74c3c;
+        .no-default-warning {
             color: #e74c3c;
+            font-size: 0.85em;
+            font-style: italic;
         }
 
-        .info-box strong {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 5px;
+        .action-section {
+            margin-top: 40px;
         }
 
         .actions-grid {
@@ -336,8 +377,6 @@
             cursor: pointer;
             font-weight: 500;
             font-size: 0.95em;
-            text-transform: none;
-            letter-spacing: 0;
             color: #ffffff;
         }
 
@@ -349,12 +388,13 @@
             border: 2px solid rgba(144, 238, 144, 0.3);
         }
 
-        .downgrade-version-section {
-            margin-top: 30px;
-            padding: 25px;
-            background: rgba(135, 206, 235, 0.05);
-            border-radius: 4px;
-            border: 2px solid rgba(135, 206, 235, 0.3);
+        .subsection-title {
+            color: #90EE90;
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .version-options {
@@ -396,228 +436,6 @@
             color: #ffffff;
         }
 
-        .iso-section {
-            margin-top: 30px;
-            padding: 25px;
-            background: rgba(135, 206, 235, 0.05);
-            border-radius: 4px;
-            border: 2px solid rgba(135, 206, 235, 0.3);
-        }
-
-        .iso-radio-group {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-
-        .iso-radio-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .iso-radio-item input[type="radio"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: #87CEEB;
-        }
-
-        .iso-radio-item label {
-            margin: 0;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 1em;
-            text-transform: none;
-            letter-spacing: 0;
-            color: #ffffff;
-        }
-
-        .iso-upload-input,
-        .iso-url-input {
-            margin-top: 20px;
-        }
-
-        .iso-upload-input input[type="file"] {
-            width: 100%;
-            max-width: 500px;
-            padding: 14px 16px;
-            border: 2px solid #87CEEB;
-            border-radius: 4px;
-            font-size: 1em;
-            background: #1a1a1a;
-            color: #ffffff;
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .iso-upload-input input[type="file"]:hover {
-            border-color: #90EE90;
-            background: #252525;
-        }
-
-        .iso-upload-input input[type="file"]:focus {
-            outline: none;
-            border-color: #90EE90;
-            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.15);
-        }
-
-        .iso-upload-input input[type="file"]::file-selector-button {
-            padding: 10px 20px;
-            background: #87CEEB;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-right: 15px;
-            transition: all 0.2s;
-        }
-
-        .iso-upload-input input[type="file"]::file-selector-button:hover {
-            background: #6BB6D6;
-        }
-
-        .iso-url-input input[type="text"] {
-            width: 100%;
-            max-width: 600px;
-            padding: 14px 16px;
-            border: 2px solid #87CEEB;
-            border-radius: 4px;
-            font-size: 1em;
-            background: #1a1a1a;
-            color: #ffffff;
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            transition: all 0.2s;
-        }
-
-        .iso-url-input input[type="text"]:focus {
-            outline: none;
-            border-color: #90EE90;
-            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.15);
-            background: #252525;
-        }
-
-        .iso-url-input input[type="text"].invalid {
-            border-color: #e74c3c;
-        }
-
-        .iso-url-input input[type="text"].valid {
-            border-color: #90EE90;
-        }
-
-        .image-section {
-            margin-top: 30px;
-            padding: 25px;
-            background: rgba(144, 238, 144, 0.05);
-            border-radius: 4px;
-            border: 2px solid rgba(144, 238, 144, 0.3);
-        }
-
-        .image-radio-group {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-
-        .image-radio-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .image-radio-item input[type="radio"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: #90EE90;
-        }
-
-        .image-radio-item label {
-            margin: 0;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 1em;
-            text-transform: none;
-            letter-spacing: 0;
-            color: #ffffff;
-        }
-
-        .image-upload-input,
-        .image-url-input {
-            margin-top: 20px;
-        }
-
-        .image-upload-input input[type="file"] {
-            width: 100%;
-            max-width: 500px;
-            padding: 14px 16px;
-            border: 2px solid #90EE90;
-            border-radius: 4px;
-            font-size: 1em;
-            background: #1a1a1a;
-            color: #ffffff;
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .image-upload-input input[type="file"]:hover {
-            border-color: #87CEEB;
-            background: #252525;
-        }
-
-        .image-upload-input input[type="file"]:focus {
-            outline: none;
-            border-color: #87CEEB;
-            box-shadow: 0 0 0 3px rgba(135, 206, 235, 0.15);
-        }
-
-        .image-upload-input input[type="file"]::file-selector-button {
-            padding: 10px 20px;
-            background: #90EE90;
-            color: #000000;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-right: 15px;
-            transition: all 0.2s;
-        }
-
-        .image-upload-input input[type="file"]::file-selector-button:hover {
-            background: #7CDA7C;
-        }
-
-        .image-url-input input[type="text"] {
-            width: 100%;
-            max-width: 600px;
-            padding: 14px 16px;
-            border: 2px solid #90EE90;
-            border-radius: 4px;
-            font-size: 1em;
-            background: #1a1a1a;
-            color: #ffffff;
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            transition: all 0.2s;
-        }
-
-        .image-url-input input[type="text"]:focus {
-            outline: none;
-            border-color: #87CEEB;
-            box-shadow: 0 0 0 3px rgba(135, 206, 235, 0.15);
-            background: #252525;
-        }
-
-        .image-url-input input[type="text"].invalid {
-            border-color: #e74c3c;
-        }
-
-        .image-url-input input[type="text"].valid {
-            border-color: #87CEEB;
-        }
-
         .button-container {
             text-align: center;
             margin-top: 40px;
@@ -657,7 +475,18 @@
             color: #9ca3af;
         }
 
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666666;
+            font-style: italic;
+        }
+
         @media (max-width: 968px) {
+            .vendor-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+
             .actions-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -673,7 +502,11 @@
                 text-align: center;
             }
 
-            .selection-row {
+            .vendor-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .model-checkboxes {
                 grid-template-columns: 1fr;
             }
 
@@ -692,6 +525,10 @@
             .content {
                 padding: 30px 25px;
             }
+
+            .dut-table-container {
+                overflow-x: scroll;
+            }
         }
     </style>
 </head>
@@ -699,21 +536,7 @@
     <div class="container">
         <div class="header">
             <div class="logo-container">
-                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="8" y="16" width="48" height="32" rx="2" stroke="#87CEEB" stroke-width="2.5" fill="white"/>
-                    <rect x="12" y="20" width="10" height="8" rx="1" fill="#87CEEB"/>
-                    <rect x="12" y="32" width="10" height="8" rx="1" fill="#87CEEB"/>
-                    <rect x="27" y="20" width="10" height="8" rx="1" fill="#90EE90"/>
-                    <rect x="27" y="32" width="10" height="8" rx="1" fill="#90EE90"/>
-                    <rect x="42" y="20" width="10" height="8" rx="1" fill="#87CEEB"/>
-                    <rect x="42" y="32" width="10" height="8" rx="1" fill="#87CEEB"/>
-                    <line x1="20" y1="12" x2="20" y2="16" stroke="#87CEEB" stroke-width="2"/>
-                    <line x1="32" y1="12" x2="32" y2="16" stroke="#87CEEB" stroke-width="2"/>
-                    <line x1="44" y1="12" x2="44" y2="16" stroke="#87CEEB" stroke-width="2"/>
-                    <circle cx="16" cy="10" r="2" fill="#90EE90"/>
-                    <circle cx="32" cy="10" r="2" fill="#90EE90"/>
-                    <circle cx="48" cy="10" r="2" fill="#90EE90"/>
-                </svg>
+                <img src="/static/images/versa_logo.png" alt="Versa Networks Logo" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
             <div class="header-text">
                 <h1>VERSA HARDWARE TESTING PORTAL</h1>
@@ -723,64 +546,48 @@
 
         <form id="testingForm" action="/submit" method="POST" enctype="multipart/form-data">
             <div class="content">
-                <div class="selection-section">
-                    <h2 class="section-title">Device Configuration</h2>
-                    <div class="selection-row">
-                        <div class="form-group">
-                            <label for="vendorSelect">Vendor <span class="required">*</span></label>
-                            <select id="vendorSelect" name="vendor" required>
-                                <option value="">-- Select Vendor --</option>
-                                <option value="Versa">Versa</option>
-                                <option value="Lanner">Lanner</option>
-                                <option value="Advantech">Advantech</option>
-                                <option value="Silicom">Silicom</option>
-                                <option value="Dell">Dell</option>
-                                <option value="Caswell">Caswell</option>
-                                <option value="Riverbed">Riverbed</option>
-                                <option value="Portwell">Portwell</option>
-                                <option value="Commscope">Commscope</option>
-                                <option value="Datacom">Datacom</option>
-                                <option value="Nexcom">Nexcom</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="modelSelect">Model <span class="required">*</span></label>
-                            <select id="modelSelect" name="model" disabled required>
-                                <option value="">-- Select Vendor First --</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="dut-section" id="dutSection" style="display: none;">
-                        <h3 class="subsection-title">DUT Configuration <span class="required">*</span></h3>
-                        <div class="dut-options">
-                            <div class="dut-radio-group">
-                                <div class="dut-radio-item">
-                                    <input type="radio" id="defaultDUT" name="dutType" value="default">
-                                    <label for="defaultDUT">Use Default DUT</label>
-                                </div>
-                                <div class="dut-radio-item">
-                                    <input type="radio" id="customDUT" name="dutType" value="custom">
-                                    <label for="customDUT">Use Custom DUT</label>
-                                </div>
-                            </div>
-                            <div class="default-dut-display" id="defaultDUTDisplay" style="display: none;">
-                                <div class="info-box" id="defaultDUTInfo"></div>
-                            </div>
-                            <div class="custom-dut-input" id="customDUTInput" style="display: none;">
-                                <label for="dutIP">DUT IP Address <span class="required">*</span></label>
-                                <input type="text" id="dutIP" name="dutIP" placeholder="e.g., 192.168.1.100" />
-                                <input type="hidden" id="finalDutIP" name="finalDutIP" />
-                                <span class="validation-message" id="ipValidationMessage"></span>
-                            </div>
-                        </div>
+                <!-- Vendor Selection -->
+                <div class="vendor-section">
+                    <h2 class="section-title">Select Vendors <span class="required">*</span></h2>
+                    <div class="vendor-grid" id="vendorGrid">
+                        <!-- Vendor cards will be populated by JavaScript -->
                     </div>
                 </div>
 
+                <!-- Models Selection -->
+                <div class="models-section" id="modelsSection" style="display: none;">
+                    <h2 class="section-title">Select Models <span class="required">*</span></h2>
+                    <div id="vendorModelsContainer">
+                        <!-- Vendor-specific model sections will be populated here -->
+                    </div>
+                </div>
+
+                <!-- DUT Configuration Table -->
+                <div class="dut-configuration-section" id="dutConfigSection" style="display: none;">
+                    <h2 class="section-title">DUT Configuration <span class="required">*</span></h2>
+                    <div class="dut-table-container">
+                        <table id="dutTable">
+                            <thead>
+                                <tr>
+                                    <th>Vendor</th>
+                                    <th>Model</th>
+                                    <th>DUT Type</th>
+                                    <th>IP Address</th>
+                                    <th>Username</th>
+                                    <th>Password</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dutTableBody">
+                                <!-- Rows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Test Actions -->
                 <div class="action-section" id="actionSection" style="display: none;">
                     <h2 class="section-title">Test Operation <span class="required">*</span></h2>
-                    <div class="actions-grid" id="actionsContainer">
+                    <div class="actions-grid">
                         <div class="action-item">
                             <input type="radio" id="action1" name="selectedAction" value="upgrade">
                             <label for="action1">Upgrade</label>
@@ -836,84 +643,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="downgrade-version-section" id="downgradeVersionSection" style="display: none;">
-                        <h3 class="subsection-title">Downgrade To Version <span class="required">*</span></h3>
-                        <div class="version-options">
-                            <div class="version-item">
-                                <input type="radio" id="downgrade1" name="downgradeFromVersion" value="22.1.4">
-                                <label for="downgrade1">22.1.4</label>
-                            </div>
-                            <div class="version-item">
-                                <input type="radio" id="downgrade2" name="downgradeFromVersion" value="22.1.3">
-                                <label for="downgrade2">22.1.3</label>
-                            </div>
-                            <div class="version-item">
-                                <input type="radio" id="downgrade3" name="downgradeFromVersion" value="22.1.2">
-                                <label for="downgrade3">22.1.2</label>
-                            </div>
-                            <div class="version-item">
-                                <input type="radio" id="downgrade4" name="downgradeFromVersion" value="22.1.1">
-                                <label for="downgrade4">22.1.1</label>
-                            </div>
-                            <div class="version-item">
-                                <input type="radio" id="downgradeCustom" name="downgradeFromVersion" value="Custom">
-                                <label for="downgradeCustom">Custom Build</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="iso-section" id="isoSection" style="display: none;">
-                        <h3 class="subsection-title">ISO File Source <span class="required">*</span></h3>
-                        <div class="iso-source-options">
-                            <div class="iso-radio-group">
-                                <div class="iso-radio-item">
-                                    <input type="radio" id="uploadISO" name="isoSource" value="upload">
-                                    <label for="uploadISO">Upload ISO File</label>
-                                </div>
-                                <div class="iso-radio-item">
-                                    <input type="radio" id="urlISO" name="isoSource" value="url">
-                                    <label for="urlISO">Provide ISO URL</label>
-                                </div>
-                            </div>
-                            <div class="iso-upload-input" id="isoUploadInput" style="display: none;">
-                                <label for="isoFile">Select ISO File <span class="required">*</span></label>
-                                <input type="file" id="isoFile" name="isoFile" accept=".iso" />
-                                <span class="validation-message" id="isoFileValidation"></span>
-                            </div>
-                            <div class="iso-url-input" id="isoUrlInput" style="display: none;">
-                                <label for="isoURL">ISO File URL <span class="required">*</span></label>
-                                <input type="text" id="isoURL" name="isoURL" placeholder="https://example.com/path/to/file.iso" />
-                                <span class="validation-message" id="isoUrlValidation"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="image-section" id="imageSection" style="display: none;">
-                        <h3 class="subsection-title">Image File Source <span class="required">*</span></h3>
-                        <div class="image-source-options">
-                            <div class="image-radio-group">
-                                <div class="image-radio-item">
-                                    <input type="radio" id="uploadImage" name="imageSource" value="upload">
-                                    <label for="uploadImage">Upload Image File</label>
-                                </div>
-                                <div class="image-radio-item">
-                                    <input type="radio" id="urlImage" name="imageSource" value="url">
-                                    <label for="urlImage">Provide Image URL</label>
-                                </div>
-                            </div>
-                            <div class="image-upload-input" id="imageUploadInput" style="display: none;">
-                                <label for="imageFile">Select Image File (.bin) <span class="required">*</span></label>
-                                <input type="file" id="imageFile" name="imageFile" accept=".bin" />
-                                <span class="validation-message" id="imageFileValidation"></span>
-                            </div>
-                            <div class="image-url-input" id="imageUrlInput" style="display: none;">
-                                <label for="imageURL">Image File URL <span class="required">*</span></label>
-                                <input type="text" id="imageURL" name="imageURL" placeholder="https://example.com/path/to/file.bin" />
-                                <span class="validation-message" id="imageUrlValidation"></span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="button-container">
@@ -921,6 +650,7 @@
                 </div>
             </div>
             <input type="hidden" id="downloadLatest" name="downloadLatest" value="false">
+            <input type="hidden" id="deviceConfigData" name="deviceConfigData" value="">
         </form>
     </div>
 
@@ -940,372 +670,366 @@
         };
 
         const defaultDUTMapping = {
-            'CSG750': '10.0.250.51',
-            '80500-0214': '10.0.250.52',
-            'CSG2500': '10.0.250.17',
-            'VEP-4600-V930': '10.0.250.19'
+            'CSG750': { ip: '10.0.250.51', username: 'admin', password: 'versa123' },
+            '80500-0214': { ip: '10.0.250.52', username: 'admin', password: 'versa123' },
+            'CSG2500': { ip: '10.0.250.17', username: 'admin', password: 'versa123' },
+            'VEP-4600-V930': { ip: '10.0.250.19', username: 'admin', password: 'versa123' }
         };
 
-        let currentDefaultIP = null;
-
-        const vendorSelect = document.getElementById('vendorSelect');
-        const modelSelect = document.getElementById('modelSelect');
-        const dutSection = document.getElementById('dutSection');
-        const actionSection = document.getElementById('actionSection');
-        const upgradeVersionSection = document.getElementById('upgradeVersionSection');
-        const downgradeVersionSection = document.getElementById('downgradeVersionSection');
-        const isoSection = document.getElementById('isoSection');
-        const imageSection = document.getElementById('imageSection');
-        const defaultDUT = document.getElementById('defaultDUT');
-        const customDUT = document.getElementById('customDUT');
-        const defaultDUTDisplay = document.getElementById('defaultDUTDisplay');
-        const defaultDUTInfo = document.getElementById('defaultDUTInfo');
-        const customDUTInput = document.getElementById('customDUTInput');
-        const dutIPInput = document.getElementById('dutIP');
-        const finalDutIPInput = document.getElementById('finalDutIP');
-        const ipValidationMessage = document.getElementById('ipValidationMessage');
-        const uploadISO = document.getElementById('uploadISO');
-        const urlISO = document.getElementById('urlISO');
-        const isoUploadInput = document.getElementById('isoUploadInput');
-        const isoUrlInput = document.getElementById('isoUrlInput');
-        const isoFile = document.getElementById('isoFile');
-        const isoURL = document.getElementById('isoURL');
-        const isoFileValidation = document.getElementById('isoFileValidation');
-        const isoUrlValidation = document.getElementById('isoUrlValidation');
-        const uploadImage = document.getElementById('uploadImage');
-        const urlImage = document.getElementById('urlImage');
-        const imageUploadInput = document.getElementById('imageUploadInput');
-        const imageUrlInput = document.getElementById('imageUrlInput');
-        const imageFile = document.getElementById('imageFile');
-        const imageURL = document.getElementById('imageURL');
-        const imageFileValidation = document.getElementById('imageFileValidation');
-        const imageUrlValidation = document.getElementById('imageUrlValidation');
-        const startButton = document.getElementById('startButton');
-        const testingForm = document.getElementById('testingForm');
+        const vendors = ['Versa', 'Lanner', 'Advantech', 'Silicom', 'Dell', 'Caswell', 'Riverbed', 'Portwell', 'Commscope', 'Datacom', 'Nexcom'];
+        
+        let selectedVendors = [];
+        let selectedModels = {}; // { vendor: [models] }
+        let deviceConfigs = {}; // { vendor_model: { type, ip, username, password } }
 
         function isValidIP(ip) {
             const ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
             return ipPattern.test(ip);
         }
 
-        function isValidURL(url) {
-            try {
-                const urlObj = new URL(url);
-                return (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') && url.toLowerCase().endsWith('.iso');
-            } catch {
-                return false;
+        function initializeVendorCards() {
+            const vendorGrid = document.getElementById('vendorGrid');
+            if (!vendorGrid) {
+                console.error('vendorGrid element not found!');
+                return;
             }
+            
+            vendorGrid.innerHTML = '';
+            console.log('Initializing vendor cards with vendors:', vendors);
+            
+            vendors.forEach(vendor => {
+                const card = document.createElement('div');
+                card.className = 'vendor-card';
+                card.innerHTML = `
+                    <input type="checkbox" id="vendor_${vendor}" value="${vendor}">
+                    <div class="vendor-name">${vendor}</div>
+                `;
+                
+                card.onclick = function() {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    updateVendorSelection();
+                };
+                
+                vendorGrid.appendChild(card);
+            });
+            
+            console.log('Vendor cards created:', vendorGrid.children.length);
         }
 
-        function isValidImageURL(url) {
-            try {
-                const urlObj = new URL(url);
-                return (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') && url.toLowerCase().endsWith('.bin');
-            } catch {
-                return false;
-            }
+        function updateVendorSelection() {
+            selectedVendors = [];
+            document.querySelectorAll('.vendor-card input[type="checkbox"]').forEach(cb => {
+                const card = cb.parentElement;
+                if (cb.checked) {
+                    selectedVendors.push(cb.value);
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                    // Remove models for unselected vendor
+                    delete selectedModels[cb.value];
+                }
+            });
+            
+            updateModelsSection();
         }
 
-        function checkDUTValidity() {
-            if (defaultDUT.checked) {
-                return currentDefaultIP !== null;
-            } else if (customDUT.checked) {
-                const ip = dutIPInput.value.trim();
-                return ip !== '' && isValidIP(ip);
+        function updateModelsSection() {
+            const modelsSection = document.getElementById('modelsSection');
+            const vendorModelsContainer = document.getElementById('vendorModelsContainer');
+            
+            if (selectedVendors.length === 0) {
+                modelsSection.style.display = 'none';
+                return;
             }
-            return false;
+            
+            modelsSection.style.display = 'block';
+            vendorModelsContainer.innerHTML = '';
+            
+            selectedVendors.forEach(vendor => {
+                if (!selectedModels[vendor]) {
+                    selectedModels[vendor] = [];
+                }
+                
+                const vendorContainer = document.createElement('div');
+                vendorContainer.className = 'vendor-models-container';
+                vendorContainer.innerHTML = `
+                    <div class="vendor-models-title">${vendor} Models</div>
+                    <div class="model-checkboxes" id="models_${vendor}"></div>
+                `;
+                
+                vendorModelsContainer.appendChild(vendorContainer);
+                
+                const modelsContainer = document.getElementById(`models_${vendor}`);
+                const models = modelData[vendor] || [];
+                
+                models.forEach(model => {
+                    const item = document.createElement('div');
+                    item.className = 'model-checkbox-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `model_${vendor}_${model.replace(/\s+/g, '_')}`;
+                    checkbox.value = model;
+                    checkbox.checked = selectedModels[vendor].includes(model);
+                    checkbox.onchange = function() {
+                        updateModelSelection(vendor, model, this.checked);
+                    };
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = checkbox.id;
+                    label.textContent = model;
+                    
+                    item.appendChild(checkbox);
+                    item.appendChild(label);
+                    item.onclick = function(e) {
+                        if (e.target.tagName !== 'INPUT') {
+                            checkbox.checked = !checkbox.checked;
+                            updateModelSelection(vendor, model, checkbox.checked);
+                        }
+                    };
+                    
+                    modelsContainer.appendChild(item);
+                });
+            });
         }
 
-        function updateActionSectionVisibility() {
-            const vendorSelected = vendorSelect.value !== '';
-            const modelSelected = modelSelect.value !== '';
-            const dutValid = checkDUTValidity();
-
-            if (vendorSelected && modelSelected && dutValid) {
-                actionSection.style.display = 'block';
+        function updateModelSelection(vendor, model, isChecked) {
+            if (isChecked) {
+                if (!selectedModels[vendor].includes(model)) {
+                    selectedModels[vendor].push(model);
+                    // Initialize device config
+                    const key = `${vendor}::${model}`;
+                    if (!deviceConfigs[key]) {
+                        const hasDefault = defaultDUTMapping[model];
+                        deviceConfigs[key] = {
+                            vendor: vendor,
+                            model: model,
+                            type: hasDefault ? 'default' : 'custom',
+                            ip: hasDefault ? hasDefault.ip : '',
+                            username: hasDefault ? hasDefault.username : 'admin',
+                            password: hasDefault ? hasDefault.password : 'versa123'
+                        };
+                    }
+                }
             } else {
-                actionSection.style.display = 'none';
-                upgradeVersionSection.style.display = 'none';
-                downgradeVersionSection.style.display = 'none';
-                isoSection.style.display = 'none';
-                imageSection.style.display = 'none';
-                document.querySelectorAll('input[name="selectedAction"]').forEach(r => r.checked = false);
+                selectedModels[vendor] = selectedModels[vendor].filter(m => m !== model);
+                const key = `${vendor}::${model}`;
+                delete deviceConfigs[key];
             }
+            
+            updateDUTTable();
+        }
+
+        function updateDUTTable() {
+            const dutConfigSection = document.getElementById('dutConfigSection');
+            const dutTableBody = document.getElementById('dutTableBody');
+            
+            // Count total selected models
+            let totalModels = 0;
+            Object.values(selectedModels).forEach(models => {
+                totalModels += models.length;
+            });
+            
+            if (totalModels === 0) {
+                dutConfigSection.style.display = 'none';
+                document.getElementById('actionSection').style.display = 'none';
+                return;
+            }
+            
+            dutConfigSection.style.display = 'block';
+            dutTableBody.innerHTML = '';
+            
+            // Build table rows
+            Object.keys(deviceConfigs).forEach(key => {
+                const config = deviceConfigs[key];
+                const hasDefault = defaultDUTMapping[config.model];
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="vendor-cell">${config.vendor}</td>
+                    <td class="model-cell">${config.model}</td>
+                    <td class="dut-type-cell">
+                        <label>
+                            <input type="radio" name="dutType_${key}" value="default" 
+                                ${config.type === 'default' ? 'checked' : ''} 
+                                ${!hasDefault ? 'disabled' : ''}
+                                onchange="updateDUTType('${key}', 'default')">
+                            Default ${!hasDefault ? '(N/A)' : ''}
+                        </label>
+                        <label>
+                            <input type="radio" name="dutType_${key}" value="custom" 
+                                ${config.type === 'custom' ? 'checked' : ''}
+                                onchange="updateDUTType('${key}', 'custom')">
+                            Custom
+                        </label>
+                    </td>
+                    <td class="dut-details-cell">
+                        ${config.type === 'default' && hasDefault ? 
+                            `<div class="default-dut-display">${hasDefault.ip}</div>` :
+                            `<input type="text" id="ip_${key}" value="${config.ip}" 
+                                placeholder="192.168.1.100" 
+                                oninput="updateDUTField('${key}', 'ip', this.value)"
+                                class="${config.ip && isValidIP(config.ip) ? 'valid' : (config.ip ? 'invalid' : '')}">`
+                        }
+                    </td>
+                    <td class="dut-details-cell">
+                        ${config.type === 'default' && hasDefault ? 
+                            `<div class="default-dut-display">${hasDefault.username}</div>` :
+                            `<input type="text" id="username_${key}" value="${config.username}" 
+                                placeholder="admin" 
+                                oninput="updateDUTField('${key}', 'username', this.value)">`
+                        }
+                    </td>
+                    <td class="dut-details-cell">
+                        ${config.type === 'default' && hasDefault ? 
+                            `<div class="default-dut-display">${hasDefault.password}</div>` :
+                            `<input type="text" id="password_${key}" value="${config.password}" 
+                                placeholder="versa123" 
+                                oninput="updateDUTField('${key}', 'password', this.value)">`
+                        }
+                    </td>
+                `;
+                
+                dutTableBody.appendChild(row);
+            });
+            
             validateForm();
         }
 
-        vendorSelect.addEventListener('change', function() {
-            modelSelect.innerHTML = '<option value="">-- Select Model --</option>';
-            dutSection.style.display = 'none';
-            actionSection.style.display = 'none';
-            currentDefaultIP = null;
-            
-            if (this.value && modelData[this.value]) {
-                modelSelect.disabled = false;
-                modelData[this.value].forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model;
-                    option.textContent = model;
-                    modelSelect.appendChild(option);
-                });
-            } else {
-                modelSelect.disabled = true;
-            }
-            updateActionSectionVisibility();
-        });
-
-        modelSelect.addEventListener('change', function() {
-            if (this.value) {
-                dutSection.style.display = 'block';
-                currentDefaultIP = defaultDUTMapping[this.value] || null;
-            } else {
-                dutSection.style.display = 'none';
-                actionSection.style.display = 'none';
-            }
-            defaultDUT.checked = false;
-            customDUT.checked = false;
-            defaultDUTDisplay.style.display = 'none';
-            customDUTInput.style.display = 'none';
-            updateActionSectionVisibility();
-        });
-
-        defaultDUT.addEventListener('change', function() {
-            if (this.checked) {
-                customDUTInput.style.display = 'none';
-                defaultDUTDisplay.style.display = 'block';
+        function updateDUTType(key, type) {
+            if (deviceConfigs[key]) {
+                deviceConfigs[key].type = type;
+                const hasDefault = defaultDUTMapping[deviceConfigs[key].model];
                 
-                if (currentDefaultIP) {
-                    defaultDUTInfo.className = 'info-box success';
-                    defaultDUTInfo.innerHTML = '<strong>Default DUT IP Address:</strong> ' + currentDefaultIP;
-                    finalDutIPInput.value = currentDefaultIP;
-                } else {
-                    defaultDUTInfo.className = 'info-box warning';
-                    defaultDUTInfo.innerHTML = '<strong>⚠ No Default DUT Available</strong>Sorry, no default DUT is available for this model. Please use Custom DUT instead.';
-                    finalDutIPInput.value = '';
+                if (type === 'default' && hasDefault) {
+                    deviceConfigs[key].ip = hasDefault.ip;
+                    deviceConfigs[key].username = hasDefault.username;
+                    deviceConfigs[key].password = hasDefault.password;
+                } else if (type === 'custom') {
+                    // Keep existing custom values or set defaults
+                    if (!deviceConfigs[key].ip || deviceConfigs[key].ip === (hasDefault ? hasDefault.ip : '')) {
+                        deviceConfigs[key].ip = '';
+                    }
+                }
+                
+                updateDUTTable();
+            }
+        }
+
+        function updateDUTField(key, field, value) {
+            if (deviceConfigs[key]) {
+                deviceConfigs[key][field] = value;
+                
+                // Validate IP and update class
+                if (field === 'ip') {
+                    const input = document.getElementById(`ip_${key}`);
+                    if (input) {
+                        if (value && isValidIP(value)) {
+                            input.classList.remove('invalid');
+                            input.classList.add('valid');
+                        } else if (value) {
+                            input.classList.remove('valid');
+                            input.classList.add('invalid');
+                        } else {
+                            input.classList.remove('valid', 'invalid');
+                        }
+                    }
+                }
+                
+                validateForm();
+            }
+        }
+
+        function validateDUTConfigs() {
+            for (let key in deviceConfigs) {
+                const config = deviceConfigs[key];
+                const hasDefault = defaultDUTMapping[config.model];
+                
+                if (config.type === 'default' && !hasDefault) {
+                    return false;
+                }
+                
+                if (config.type === 'custom') {
+                    if (!config.ip || !isValidIP(config.ip)) {
+                        return false;
+                    }
+                    if (!config.username || config.username.trim() === '') {
+                        return false;
+                    }
+                    if (!config.password || config.password.trim() === '') {
+                        return false;
+                    }
                 }
             }
-            updateActionSectionVisibility();
-        });
+            return true;
+        }
 
-        customDUT.addEventListener('change', function() {
-            if (this.checked) {
-                defaultDUTDisplay.style.display = 'none';
-                customDUTInput.style.display = 'block';
-                dutIPInput.focus();
-            }
-            updateActionSectionVisibility();
-        });
-
-        dutIPInput.addEventListener('input', function() {
-            const ip = this.value.trim();
+        function validateForm() {
+            const hasModels = Object.keys(deviceConfigs).length > 0;
+            const dutConfigsValid = validateDUTConfigs();
+            const actionSelected = document.querySelector('input[name="selectedAction"]:checked') !== null;
+            const selectedAction = document.querySelector('input[name="selectedAction"]:checked')?.value;
             
-            if (ip === '') {
-                this.classList.remove('invalid', 'valid');
-                ipValidationMessage.textContent = '';
-                finalDutIPInput.value = '';
-            } else if (isValidIP(ip)) {
-                this.classList.remove('invalid');
-                this.classList.add('valid');
-                ipValidationMessage.textContent = '✓ Valid IP address';
-                ipValidationMessage.className = 'validation-message success';
-                finalDutIPInput.value = ip;
+            let allValid = hasModels && dutConfigsValid;
+            
+            // Show action section if DUT configs are valid
+            if (hasModels && dutConfigsValid) {
+                document.getElementById('actionSection').style.display = 'block';
+                allValid = allValid && actionSelected;
+                
+                if (selectedAction === 'upgrade') {
+                    allValid = allValid && document.querySelector('input[name="upgradeToVersion"]:checked') !== null;
+                }
             } else {
-                this.classList.remove('valid');
-                this.classList.add('invalid');
-                ipValidationMessage.textContent = '✗ Invalid IP address format';
-                ipValidationMessage.className = 'validation-message error';
-                finalDutIPInput.value = '';
+                document.getElementById('actionSection').style.display = 'none';
             }
-            updateActionSectionVisibility();
-        });
-        
+            
+            document.getElementById('startButton').disabled = !allValid;
+        }
+
         document.querySelectorAll('input[name="selectedAction"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 const selectedAction = document.querySelector('input[name="selectedAction"]:checked')?.value;
                 
-                upgradeVersionSection.style.display = 'none';
-                downgradeVersionSection.style.display = 'none';
-                isoSection.style.display = 'none';
-                imageSection.style.display = 'none';
+                document.getElementById('upgradeVersionSection').style.display = 
+                    selectedAction === 'upgrade' ? 'block' : 'none';
                 
-                if (selectedAction === 'upgrade') {
-                    upgradeVersionSection.style.display = 'block';
-                } else if (selectedAction === 'downgrade') {
-                    downgradeVersionSection.style.display = 'block';
-                } else if (selectedAction === 'install-iso') {
-                    isoSection.style.display = 'block';
-                } else if (selectedAction === 'load-new-image') {
-                    imageSection.style.display = 'block';
-                }
                 validateForm();
             });
         });
 
-        document.querySelectorAll('input[name="upgradeToVersion"]').forEach(r => r.addEventListener('change', validateForm));
-        document.querySelectorAll('input[name="downgradeFromVersion"]').forEach(r => r.addEventListener('change', validateForm));
-
-        // Handle latest version selection
-        document.querySelectorAll('input[name="upgradeToVersion"]').forEach(radio => {
-            radio.addEventListener('change', function() {
+        document.querySelectorAll('input[name="upgradeToVersion"]').forEach(r => {
+            r.addEventListener('change', function() {
                 const downloadLatestInput = document.getElementById('downloadLatest');
                 if (this.checked && this.getAttribute('data-latest') === 'true') {
                     downloadLatestInput.value = 'true';
                 } else {
                     downloadLatestInput.value = 'false';
                 }
+                validateForm();
             });
         });
 
-        // ISO Upload/URL handlers
-        uploadISO.addEventListener('change', function() {
-            if (this.checked) {
-                isoUrlInput.style.display = 'none';
-                isoUploadInput.style.display = 'block';
-            }
-            validateForm();
-        });
-
-        urlISO.addEventListener('change', function() {
-            if (this.checked) {
-                isoUploadInput.style.display = 'none';
-                isoUrlInput.style.display = 'block';
-            }
-            validateForm();
-        });
-
-        isoFile.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                const file = this.files[0];
-                if (file.name.toLowerCase().endsWith('.iso')) {
-                    isoFileValidation.textContent = '✓ Selected: ' + file.name;
-                    isoFileValidation.className = 'validation-message success';
-                } else {
-                    isoFileValidation.textContent = '✗ Please select a valid .iso file';
-                    isoFileValidation.className = 'validation-message error';
-                }
-            }
-            validateForm();
-        });
-
-        isoURL.addEventListener('input', function() {
-            const url = this.value.trim();
-            
-            if (url === '') {
-                this.classList.remove('invalid', 'valid');
-                isoUrlValidation.textContent = '';
-            } else if (isValidURL(url)) {
-                this.classList.remove('invalid');
-                this.classList.add('valid');
-                isoUrlValidation.textContent = '✓ Valid ISO URL';
-                isoUrlValidation.className = 'validation-message success';
-            } else {
-                this.classList.remove('valid');
-                this.classList.add('invalid');
-                isoUrlValidation.textContent = '✗ Invalid URL or file must end with .iso';
-                isoUrlValidation.className = 'validation-message error';
-            }
-            validateForm();
-        });
-
-        // Image Upload/URL handlers
-        uploadImage.addEventListener('change', function() {
-            if (this.checked) {
-                imageUrlInput.style.display = 'none';
-                imageUploadInput.style.display = 'block';
-            }
-            validateForm();
-        });
-
-        urlImage.addEventListener('change', function() {
-            if (this.checked) {
-                imageUploadInput.style.display = 'none';
-                imageUrlInput.style.display = 'block';
-            }
-            validateForm();
-        });
-
-        imageFile.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                const file = this.files[0];
-                if (file.name.toLowerCase().endsWith('.bin')) {
-                    imageFileValidation.textContent = '✓ Selected: ' + file.name;
-                    imageFileValidation.className = 'validation-message success';
-                } else {
-                    imageFileValidation.textContent = '✗ Please select a valid .bin file';
-                    imageFileValidation.className = 'validation-message error';
-                }
-            }
-            validateForm();
-        });
-
-        imageURL.addEventListener('input', function() {
-            const url = this.value.trim();
-            
-            if (url === '') {
-                this.classList.remove('invalid', 'valid');
-                imageUrlValidation.textContent = '';
-            } else if (isValidImageURL(url)) {
-                this.classList.remove('invalid');
-                this.classList.add('valid');
-                imageUrlValidation.textContent = '✓ Valid Image URL';
-                imageUrlValidation.className = 'validation-message success';
-            } else {
-                this.classList.remove('valid');
-                this.classList.add('invalid');
-                imageUrlValidation.textContent = '✗ Invalid URL or file must end with .bin';
-                imageUrlValidation.className = 'validation-message error';
-            }
-            validateForm();
-        });
-
-        function validateForm() {
-            const vendorSelected = vendorSelect.value !== '';
-            const modelSelected = modelSelect.value !== '';
-            const dutValid = checkDUTValidity();
-            const actionSelected = document.querySelector('input[name="selectedAction"]:checked') !== null;
-            const selectedAction = document.querySelector('input[name="selectedAction"]:checked')?.value;
-            
-            let allValid = vendorSelected && modelSelected && dutValid && actionSelected;
-            
-            if (selectedAction === 'upgrade') {
-                allValid = allValid && document.querySelector('input[name="upgradeToVersion"]:checked') !== null;
-            } else if (selectedAction === 'downgrade') {
-                allValid = allValid && document.querySelector('input[name="downgradeFromVersion"]:checked') !== null;
-            } else if (selectedAction === 'install-iso') {
-                let isoValid = false;
-                if (uploadISO.checked) {
-                    isoValid = isoFile.files.length > 0 && isoFile.files[0].name.toLowerCase().endsWith('.iso');
-                } else if (urlISO.checked) {
-                    isoValid = isoURL.value.trim() !== '' && isValidURL(isoURL.value.trim());
-                }
-                allValid = allValid && isoValid;
-            } else if (selectedAction === 'load-new-image') {
-                let imageValid = false;
-                if (uploadImage.checked) {
-                    imageValid = imageFile.files.length > 0 && imageFile.files[0].name.toLowerCase().endsWith('.bin');
-                } else if (urlImage.checked) {
-                    imageValid = imageURL.value.trim() !== '' && isValidImageURL(imageURL.value.trim());
-                }
-                allValid = allValid && imageValid;
-            }
-            
-            startButton.disabled = !allValid;
-        }
-
-        // Form submission handler
-        testingForm.addEventListener('submit', function(e) {
+        document.getElementById('testingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Ensure finalDutIP is set
-            if (defaultDUT.checked && currentDefaultIP) {
-                finalDutIPInput.value = currentDefaultIP;
-            } else if (customDUT.checked) {
-                finalDutIPInput.value = dutIPInput.value.trim();
-            }
+            // Prepare device configuration data as JSON
+            const configData = Object.values(deviceConfigs).map(config => ({
+                vendor: config.vendor,
+                model: config.model,
+                ip: config.ip,
+                username: config.username,
+                password: config.password
+            }));
             
-            // Submit the form
+            document.getElementById('deviceConfigData').value = JSON.stringify(configData);
+            
             this.submit();
         });
+
+        // Initialize
+        initializeVendorCards();
     </script>
 </body>
 </html>
